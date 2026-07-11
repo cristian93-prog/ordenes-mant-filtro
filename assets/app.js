@@ -97,6 +97,17 @@ const ESTADO_CLASSES = {
   'Reprogramado': 'status-reprogramado',
 };
 
+const ALERT_KEYWORDS = [
+  'URGENTE', 'RIESGO', 'FALLA', 'FALLO', 'AVERIA', 'AVERÍA', 'NO FUNCIONA',
+  'NO SE PUDO', 'NO SE LOGRO', 'NO SE LOGRÓ', 'DAÑ', 'PARO', 'REQUIERE',
+  'PENDIENTE', 'PROBLEMA', 'FUGA', 'DETENID', 'CUIDADO', 'RECURRENTE',
+];
+
+function hasAlert(comentario) {
+  const upper = comentario.toUpperCase();
+  return ALERT_KEYWORDS.some((k) => upper.includes(k));
+}
+
 function render() {
   const total = state.filtered.length;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
@@ -107,7 +118,7 @@ function render() {
   els.tbody.innerHTML = pageRows.map((o) => {
     const estadoClass = ESTADO_CLASSES[o.Estado] || '';
     const comentario = (o.ComentarioCierre || '').trim();
-    const commentFlag = comentario ? `<span class="comment-flag" title="${comentario}">!</span>` : '';
+    const commentFlag = comentario && hasAlert(comentario) ? `<span class="comment-flag" title="${comentario}">!</span>` : '';
     return `
     <tr>
       <td>${o.NoOrden}${commentFlag}</td>
