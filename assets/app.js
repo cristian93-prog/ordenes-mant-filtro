@@ -12,6 +12,7 @@ const els = {
   maquina: document.getElementById('maquina'),
   planta: document.getElementById('planta'),
   tipo: document.getElementById('tipo'),
+  tipoOrden: document.getElementById('tipoOrden'),
   estado: document.getElementById('estado'),
   tecnico: document.getElementById('tecnico'),
   semana: document.getElementById('semana'),
@@ -41,6 +42,7 @@ function buildFilters(orders) {
   populateSelect(els.maquina, uniqueSorted(orders.map((o) => o.DescripcionMaquina)));
   populateSelect(els.planta, uniqueSorted(orders.map((o) => o.Planta)));
   populateSelect(els.tipo, uniqueSorted(orders.map((o) => o.Tipo)));
+  populateSelect(els.tipoOrden, uniqueSorted(orders.map((o) => o.OrdenType)));
   populateSelect(els.estado, uniqueSorted(orders.map((o) => o.Estado)));
   const tecnicos = uniqueSorted(orders.flatMap((o) => [o.Tecnico1, o.Tecnico2]));
   populateSelect(els.tecnico, tecnicos);
@@ -57,6 +59,7 @@ function applyFilters() {
   const maquina = els.maquina.value;
   const planta = els.planta.value;
   const tipo = els.tipo.value;
+  const tipoOrden = els.tipoOrden.value;
   const estado = els.estado.value;
   const tecnico = els.tecnico.value;
   const semana = els.semana.value.trim();
@@ -65,6 +68,7 @@ function applyFilters() {
     if (maquina && o.DescripcionMaquina !== maquina) return false;
     if (planta && o.Planta !== planta) return false;
     if (tipo && o.Tipo !== tipo) return false;
+    if (tipoOrden && o.OrdenType !== tipoOrden) return false;
     if (estado && o.Estado !== estado) return false;
     if (tecnico && o.Tecnico1 !== tecnico && o.Tecnico2 !== tecnico) return false;
     if (semana && o.Semana !== semana) return false;
@@ -79,6 +83,12 @@ function applyFilters() {
   render();
 }
 
+const ESTADO_CLASSES = {
+  'Ejecutado': 'status-ejecutado',
+  'En Curso': 'status-en-curso',
+  'Reprogramado': 'status-reprogramado',
+};
+
 function render() {
   const total = state.filtered.length;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
@@ -86,7 +96,9 @@ function render() {
   const start = (state.page - 1) * PAGE_SIZE;
   const pageRows = state.filtered.slice(start, start + PAGE_SIZE);
 
-  els.tbody.innerHTML = pageRows.map((o) => `
+  els.tbody.innerHTML = pageRows.map((o) => {
+    const estadoClass = ESTADO_CLASSES[o.Estado] || '';
+    return `
     <tr>
       <td>${o.NoOrden}</td>
       <td>${o.Tipo}</td>
@@ -100,9 +112,10 @@ function render() {
       <td>${o.Tecnico2}</td>
       <td>${o.FechaPrevista}</td>
       <td>${o.Semana}</td>
-      <td>${o.Estado}</td>
+      <td class="${estadoClass}">${o.Estado}</td>
     </tr>
-  `).join('');
+  `;
+  }).join('');
 
   els.resultCount.textContent = `${total} orden(es) encontrada(s)`;
   els.pageInfo.textContent = `Página ${state.page} de ${totalPages}`;
@@ -135,7 +148,7 @@ async function init() {
   }
 }
 
-[els.q, els.maquina, els.planta, els.tipo, els.estado, els.tecnico, els.semana].forEach((el) => {
+[els.q, els.maquina, els.planta, els.tipo, els.tipoOrden, els.estado, els.tecnico, els.semana].forEach((el) => {
   el.addEventListener('input', applyFilters);
   el.addEventListener('change', applyFilters);
 });
@@ -145,6 +158,7 @@ els.clear.addEventListener('click', () => {
   els.maquina.value = '';
   els.planta.value = '';
   els.tipo.value = '';
+  els.tipoOrden.value = '';
   els.estado.value = '';
   els.tecnico.value = '';
   els.semana.value = '';

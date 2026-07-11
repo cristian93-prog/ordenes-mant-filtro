@@ -67,8 +67,15 @@ main {
 }
 
 .field-btn {
-  justify-content: flex-end;
   flex: 0 0 auto;
+}
+
+.field-btn .spacer {
+  visibility: hidden;
+}
+
+.field-btn button {
+  width: 100%;
 }
 
 button {
@@ -77,7 +84,8 @@ button {
   border-radius: 6px;
   background: var(--panel);
   cursor: pointer;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
+  line-height: 1.2;
 }
 
 button:hover {
@@ -117,6 +125,18 @@ tbody tr:hover {
   background: #f7f9fc;
 }
 
+td.status-ejecutado {
+  background: #dcf5e3;
+}
+
+td.status-en-curso {
+  background: #fdf3c8;
+}
+
+td.status-reprogramado {
+  background: #fbdada;
+}
+
 .pagination {
   display: flex;
   align-items: center;
@@ -140,4 +160,8 @@ tbody tr:hover {
   }
   th { background: #20242c; }
   tbody tr:hover { background: #232730; }
+
+  td.status-ejecutado { background: #1c3326; }
+  td.status-en-curso { background: #3a3418; }
+  td.status-reprogramado { background: #3a2020; }
 }
