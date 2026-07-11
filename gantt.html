@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Órdenes de Mantenimiento - Gantt</title>
+<link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="assets/gantt.css">
+</head>
+<body>
+<header class="header-bar">
+  <div>
+    <h1>Órdenes de Mantenimiento</h1>
+    <p id="meta" class="meta">Cargando datos…</p>
+  </div>
+  <img src="assets/logo.png" alt="La Holandesa" class="logo">
+</header>
+
+<nav class="nav-tabs">
+  <a href="index.html">Listado</a>
+  <a href="gantt.html" class="active">Gantt</a>
+</nav>
+
+<main>
+  <section class="gantt-controls">
+    <div class="field">
+      <label for="ganttFecha">Fecha</label>
+      <input type="date" id="ganttFecha">
+    </div>
+    <div class="field field-nav">
+      <label class="spacer">&nbsp;</label>
+      <div class="btn-group">
+        <button id="ganttPrev" title="Anterior">«</button>
+        <button id="ganttToday">Hoy</button>
+        <button id="ganttNext" title="Siguiente">»</button>
+      </div>
+    </div>
+    <div class="field">
+      <label>Vista</label>
+      <div class="btn-group toggle-group" id="viewToggle">
+        <button data-value="dia" class="active">Día</button>
+        <button data-value="semana">Semana</button>
+      </div>
+    </div>
+    <div class="field">
+      <label>Agrupar por</label>
+      <div class="btn-group toggle-group" id="groupToggle">
+        <button data-value="tecnico" class="active">Técnico</button>
+        <button data-value="maquina">Máquina</button>
+      </div>
+    </div>
+  </section>
+
+  <p id="ganttResumen" class="meta"></p>
+
+  <div id="ganttContainer"></div>
+
+  <div class="legend">
+    <span><i class="dot dot-ejecutado"></i>Ejecutado</span>
+    <span><i class="dot dot-en-curso"></i>En Curso</span>
+    <span><i class="dot dot-reprogramado"></i>Reprogramado</span>
+    <span><i class="dot dot-shared"></i>Compartida entre técnicos</span>
+  </div>
+</main>
+
+<script src="assets/gantt.js"></script>
+</body>
+</html>

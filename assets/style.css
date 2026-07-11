@@ -43,6 +43,28 @@ h1 {
   margin: 4px 0;
 }
 
+.nav-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 0 24px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.nav-tabs a {
+  display: inline-block;
+  padding: 8px 14px;
+  font-size: 0.85rem;
+  text-decoration: none;
+  color: var(--muted);
+  border-bottom: 2px solid transparent;
+}
+
+.nav-tabs a.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
 main {
   padding: 0 24px 32px;
 }
