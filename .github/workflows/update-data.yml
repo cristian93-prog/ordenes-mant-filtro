@@ -2,7 +2,7 @@ name: Actualizar datos de Órdenes de Mantenimiento
 
 on:
   schedule:
-    - cron: '*/15 * * * *'
+    - cron: '6,21,36,51 * * * *'
   workflow_dispatch: {}
 
 permissions:

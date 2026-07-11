@@ -89,7 +89,7 @@ function machineLabel(o, groupBy) {
 }
 
 function fullDetail(o) {
-  return `${o.NoOrden} · ${o.DescripcionMaquina} · ${o.Componente} · ${o.Actividad}`;
+  return `${o.NoOrden} · ${o.DescripcionMaquina} · ${o.Componente} · ${(o.Actividad || '').toUpperCase()}`;
 }
 
 function buildEntities(orders, groupBy) {
