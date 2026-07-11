@@ -15,6 +15,7 @@ const els = {
   tipoOrden: document.getElementById('tipoOrden'),
   estado: document.getElementById('estado'),
   tecnico: document.getElementById('tecnico'),
+  fecha: document.getElementById('fecha'),
   semana: document.getElementById('semana'),
   semanas: document.getElementById('semanas'),
   clear: document.getElementById('clear'),
@@ -24,6 +25,11 @@ const els = {
   next: document.getElementById('next'),
   pageInfo: document.getElementById('pageInfo'),
 };
+
+function isoToDDMMYYYY(isoDate) {
+  const [y, m, d] = isoDate.split('-');
+  return `${d}-${m}-${y}`;
+}
 
 function uniqueSorted(values) {
   return Array.from(new Set(values.filter(Boolean))).sort((a, b) => a.localeCompare(b, 'es'));
@@ -62,6 +68,7 @@ function applyFilters() {
   const tipoOrden = els.tipoOrden.value;
   const estado = els.estado.value;
   const tecnico = els.tecnico.value;
+  const fecha = els.fecha.value ? isoToDDMMYYYY(els.fecha.value) : '';
   const semana = els.semana.value.trim();
 
   state.filtered = state.orders.filter((o) => {
@@ -71,6 +78,7 @@ function applyFilters() {
     if (tipoOrden && o.OrdenType !== tipoOrden) return false;
     if (estado && o.Estado !== estado) return false;
     if (tecnico && o.Tecnico1 !== tecnico && o.Tecnico2 !== tecnico) return false;
+    if (fecha && o.FechaPrevista !== fecha) return false;
     if (semana && o.Semana !== semana) return false;
     if (q) {
       const haystack = `${o.DescripcionMaquina} ${o.Componente} ${o.Actividad} ${o.CodigoOT} ${o.NoOrden}`.toLowerCase();
@@ -106,7 +114,7 @@ function render() {
       <td>${o.Planta}</td>
       <td>${o.DescripcionMaquina}</td>
       <td>${o.Componente}</td>
-      <td>${o.Actividad}</td>
+      <td class="col-uppercase">${o.Actividad}</td>
       <td>${o.Prioridad}</td>
       <td>${o.Tecnico1}</td>
       <td>${o.Tecnico2}</td>
@@ -148,7 +156,7 @@ async function init() {
   }
 }
 
-[els.q, els.maquina, els.planta, els.tipo, els.tipoOrden, els.estado, els.tecnico, els.semana].forEach((el) => {
+[els.q, els.maquina, els.planta, els.tipo, els.tipoOrden, els.estado, els.tecnico, els.fecha, els.semana].forEach((el) => {
   el.addEventListener('input', applyFilters);
   el.addEventListener('change', applyFilters);
 });
@@ -161,6 +169,7 @@ els.clear.addEventListener('click', () => {
   els.tipoOrden.value = '';
   els.estado.value = '';
   els.tecnico.value = '';
+  els.fecha.value = '';
   els.semana.value = '';
   applyFilters();
 });

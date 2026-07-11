@@ -137,6 +137,10 @@ tbody tr:hover {
   background: #f7f9fc;
 }
 
+.col-uppercase {
+  text-transform: uppercase;
+}
+
 .status-badge {
   display: inline-block;
   padding: 2px 10px;
