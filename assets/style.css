@@ -20,6 +20,18 @@ header {
   padding: 20px 24px 8px;
 }
 
+.header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.logo {
+  height: 48px;
+  width: auto;
+}
+
 h1 {
   margin: 0 0 4px;
   font-size: 1.5rem;
