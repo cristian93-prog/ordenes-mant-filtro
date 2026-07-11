@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Órdenes de Mantenimiento - Filtro</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header>
+  <h1>Órdenes de Mantenimiento</h1>
+  <p id="meta" class="meta">Cargando datos…</p>
+</header>
+
+<main>
+  <section class="filters">
+    <div class="field">
+      <label for="q">Buscar (máquina, componente, actividad, código)</label>
+      <input type="search" id="q" placeholder="Ej: termoformadora, C-TOP, PR14798...">
+    </div>
+    <div class="field">
+      <label for="planta">Planta</label>
+      <select id="planta"><option value="">Todas</option></select>
+    </div>
+    <div class="field">
+      <label for="tipo">Tipo</label>
+      <select id="tipo"><option value="">Todos</option></select>
+    </div>
+    <div class="field">
+      <label for="estado">Estado</label>
+      <select id="estado"><option value="">Todos</option></select>
+    </div>
+    <div class="field">
+      <label for="tecnico">Técnico</label>
+      <select id="tecnico"><option value="">Todos</option></select>
+    </div>
+    <div class="field">
+      <label for="semana">Semana</label>
+      <input type="text" id="semana" list="semanas" placeholder="Ej: 2026-W28">
+      <datalist id="semanas"></datalist>
+    </div>
+    <div class="field field-btn">
+      <button id="clear">Limpiar filtros</button>
+    </div>
+  </section>
+
+  <p id="resultCount" class="meta"></p>
+
+  <div class="table-wrap">
+    <table id="ordersTable">
+      <thead>
+        <tr>
+          <th>NoOrden</th>
+          <th>CodigoOT</th>
+          <th>Tipo</th>
+          <th>Planta</th>
+          <th>Máquina</th>
+          <th>Componente</th>
+          <th>Actividad</th>
+          <th>Prioridad</th>
+          <th>Técnico 1</th>
+          <th>Técnico 2</th>
+          <th>Fecha Prevista</th>
+          <th>Semana</th>
+          <th>Estado</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+
+  <div class="pagination">
+    <button id="prev">« Anterior</button>
+    <span id="pageInfo"></span>
+    <button id="next">Siguiente »</button>
+  </div>
+</main>
+
+<script src="assets/app.js"></script>
+</body>
+</html>
