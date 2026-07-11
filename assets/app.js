@@ -9,6 +9,7 @@ const state = {
 const els = {
   meta: document.getElementById('meta'),
   q: document.getElementById('q'),
+  maquina: document.getElementById('maquina'),
   planta: document.getElementById('planta'),
   tipo: document.getElementById('tipo'),
   estado: document.getElementById('estado'),
@@ -37,6 +38,7 @@ function populateSelect(select, values) {
 }
 
 function buildFilters(orders) {
+  populateSelect(els.maquina, uniqueSorted(orders.map((o) => o.DescripcionMaquina)));
   populateSelect(els.planta, uniqueSorted(orders.map((o) => o.Planta)));
   populateSelect(els.tipo, uniqueSorted(orders.map((o) => o.Tipo)));
   populateSelect(els.estado, uniqueSorted(orders.map((o) => o.Estado)));
@@ -52,6 +54,7 @@ function buildFilters(orders) {
 
 function applyFilters() {
   const q = els.q.value.trim().toLowerCase();
+  const maquina = els.maquina.value;
   const planta = els.planta.value;
   const tipo = els.tipo.value;
   const estado = els.estado.value;
@@ -59,6 +62,7 @@ function applyFilters() {
   const semana = els.semana.value.trim();
 
   state.filtered = state.orders.filter((o) => {
+    if (maquina && o.DescripcionMaquina !== maquina) return false;
     if (planta && o.Planta !== planta) return false;
     if (tipo && o.Tipo !== tipo) return false;
     if (estado && o.Estado !== estado) return false;
@@ -85,8 +89,8 @@ function render() {
   els.tbody.innerHTML = pageRows.map((o) => `
     <tr>
       <td>${o.NoOrden}</td>
-      <td>${o.CodigoOT}</td>
       <td>${o.Tipo}</td>
+      <td>${o.OrdenType}</td>
       <td>${o.Planta}</td>
       <td>${o.DescripcionMaquina}</td>
       <td>${o.Componente}</td>
@@ -131,13 +135,14 @@ async function init() {
   }
 }
 
-[els.q, els.planta, els.tipo, els.estado, els.tecnico, els.semana].forEach((el) => {
+[els.q, els.maquina, els.planta, els.tipo, els.estado, els.tecnico, els.semana].forEach((el) => {
   el.addEventListener('input', applyFilters);
   el.addEventListener('change', applyFilters);
 });
 
 els.clear.addEventListener('click', () => {
   els.q.value = '';
+  els.maquina.value = '';
   els.planta.value = '';
   els.tipo.value = '';
   els.estado.value = '';
