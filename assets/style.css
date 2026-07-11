@@ -163,6 +163,29 @@ tbody tr:hover {
   text-transform: uppercase;
 }
 
+.comment-flag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 15px;
+  height: 15px;
+  margin-left: 6px;
+  border-radius: 50%;
+  background: #fbdada;
+  color: #a32626;
+  font-size: 0.7rem;
+  font-weight: 700;
+  cursor: help;
+  vertical-align: middle;
+}
+
+@media (prefers-color-scheme: dark) {
+  .comment-flag {
+    background: #3a2020;
+    color: #e88a8a;
+  }
+}
+
 .status-badge {
   display: inline-block;
   padding: 2px 10px;

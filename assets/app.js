@@ -81,7 +81,7 @@ function applyFilters() {
     if (fecha && o.FechaPrevista !== fecha) return false;
     if (semana && o.Semana !== semana) return false;
     if (q) {
-      const haystack = `${o.DescripcionMaquina} ${o.Componente} ${o.Actividad} ${o.CodigoOT} ${o.NoOrden}`.toLowerCase();
+      const haystack = `${o.DescripcionMaquina} ${o.Componente} ${o.Actividad} ${o.CodigoOT} ${o.NoOrden} ${o.ComentarioCierre}`.toLowerCase();
       if (!haystack.includes(q)) return false;
     }
     return true;
@@ -106,9 +106,11 @@ function render() {
 
   els.tbody.innerHTML = pageRows.map((o) => {
     const estadoClass = ESTADO_CLASSES[o.Estado] || '';
+    const comentario = (o.ComentarioCierre || '').trim();
+    const commentFlag = comentario ? `<span class="comment-flag" title="${comentario}">!</span>` : '';
     return `
     <tr>
-      <td>${o.NoOrden}</td>
+      <td>${o.NoOrden}${commentFlag}</td>
       <td>${o.Tipo}</td>
       <td>${o.OrdenType}</td>
       <td>${o.Planta}</td>
