@@ -125,16 +125,27 @@ tbody tr:hover {
   background: #f7f9fc;
 }
 
-td.status-ejecutado {
+.status-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.status-badge.status-ejecutado {
   background: #dcf5e3;
+  color: #1e6b3a;
 }
 
-td.status-en-curso {
+.status-badge.status-en-curso {
   background: #fdf3c8;
+  color: #8a6d00;
 }
 
-td.status-reprogramado {
+.status-badge.status-reprogramado {
   background: #fbdada;
+  color: #a32626;
 }
 
 .pagination {
@@ -161,7 +172,7 @@ td.status-reprogramado {
   th { background: #20242c; }
   tbody tr:hover { background: #232730; }
 
-  td.status-ejecutado { background: #1c3326; }
-  td.status-en-curso { background: #3a3418; }
-  td.status-reprogramado { background: #3a2020; }
+  .status-badge.status-ejecutado { background: #1c3326; color: #7fd8a0; }
+  .status-badge.status-en-curso { background: #3a3418; color: #e6c85c; }
+  .status-badge.status-reprogramado { background: #3a2020; color: #e88a8a; }
 }

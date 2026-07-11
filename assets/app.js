@@ -112,7 +112,7 @@ function render() {
       <td>${o.Tecnico2}</td>
       <td>${o.FechaPrevista}</td>
       <td>${o.Semana}</td>
-      <td class="${estadoClass}">${o.Estado}</td>
+      <td><span class="status-badge ${estadoClass}">${o.Estado}</span></td>
     </tr>
   `;
   }).join('');
