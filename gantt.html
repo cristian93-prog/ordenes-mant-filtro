@@ -23,9 +23,17 @@
 
 <main>
   <section class="gantt-controls">
-    <div class="field">
+    <div class="field" id="fieldFechaUnica">
       <label for="ganttFecha">Fecha</label>
       <input type="date" id="ganttFecha">
+    </div>
+    <div class="field" id="fieldDesde" style="display:none">
+      <label for="ganttDesde">Desde</label>
+      <input type="date" id="ganttDesde">
+    </div>
+    <div class="field" id="fieldHasta" style="display:none">
+      <label for="ganttHasta">Hasta</label>
+      <input type="date" id="ganttHasta">
     </div>
     <div class="field field-nav">
       <label class="spacer">&nbsp;</label>
@@ -40,6 +48,7 @@
       <div class="btn-group toggle-group" id="viewToggle">
         <button data-value="dia" class="active">Día</button>
         <button data-value="semana">Semana</button>
+        <button data-value="rango">Rango</button>
       </div>
     </div>
     <div class="field">

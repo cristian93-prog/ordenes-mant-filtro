@@ -6,9 +6,13 @@ const ESTADO_CLASSES = {
   'Reprogramado': 'bar-reprogramado',
 };
 
+const MAX_RANGO_DIAS = 31;
+
 const state = {
   orders: [],
   date: new Date(),
+  rangoDesde: new Date(),
+  rangoHasta: new Date(),
   view: 'dia',
   groupBy: 'tecnico',
 };
@@ -16,6 +20,11 @@ const state = {
 const els = {
   meta: document.getElementById('meta'),
   fecha: document.getElementById('ganttFecha'),
+  fieldFechaUnica: document.getElementById('fieldFechaUnica'),
+  desde: document.getElementById('ganttDesde'),
+  hasta: document.getElementById('ganttHasta'),
+  fieldDesde: document.getElementById('fieldDesde'),
+  fieldHasta: document.getElementById('fieldHasta'),
   prev: document.getElementById('ganttPrev'),
   next: document.getElementById('ganttNext'),
   today: document.getElementById('ganttToday'),
@@ -158,28 +167,25 @@ function renderDay() {
   </div></div>`;
 }
 
-function renderWeek() {
-  const weekStart = startOfWeek(state.date);
-  const days = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(weekStart);
-    d.setDate(d.getDate() + i);
-    return d;
-  });
+function renderDaysGrid(days, emptyMsg) {
   const dayStrs = days.map(toDDMMYYYY);
+  const rangeOrders = state.orders.filter((o) => dayStrs.includes(o.FechaPrevista));
+  const start = days[0];
+  const end = days[days.length - 1];
+  const sameDay = dayStrs.length === 1;
+  els.resumen.textContent = sameDay
+    ? `${rangeOrders.length} orden(es) el ${dayStrs[0]}`
+    : `${rangeOrders.length} orden(es) entre el ${toDDMMYYYY(start)} y el ${toDDMMYYYY(end)}`;
 
-  const weekOrders = state.orders.filter((o) => dayStrs.includes(o.FechaPrevista));
-  const weekEnd = days[6];
-  els.resumen.textContent = `${weekOrders.length} orden(es) entre el ${toDDMMYYYY(weekStart)} y el ${toDDMMYYYY(weekEnd)}`;
-
-  if (weekOrders.length === 0) {
-    els.container.innerHTML = '<div class="gantt-empty">No hay órdenes programadas esta semana.</div>';
+  if (rangeOrders.length === 0) {
+    els.container.innerHTML = `<div class="gantt-empty">${emptyMsg}</div>`;
     return;
   }
 
-  const entities = buildEntities(weekOrders, state.groupBy);
+  const entities = buildEntities(rangeOrders, state.groupBy);
 
-  const head = `<div class="gantt-week-head"></div>` + days.map((d, i) =>
-    `<div class="gantt-week-head">${DIAS_SEMANA[i]}<br>${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}</div>`
+  const head = `<div class="gantt-week-head"></div>` + days.map((d) =>
+    `<div class="gantt-week-head">${DIAS_SEMANA[(d.getDay() + 6) % 7]}<br>${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}</div>`
   ).join('');
 
   const rows = [...entities.entries()].map(([name, items]) => {
@@ -194,14 +200,46 @@ function renderWeek() {
     return `<div class="gantt-week-head" style="text-align:left;padding:8px 10px;" title="${escapeHtml(name)}">${escapeHtml(name)}</div>${cells}`;
   }).join('');
 
-  els.container.innerHTML = `<div class="gantt-week"><div class="gantt-week-grid">${head}${rows}</div></div>`;
+  els.container.innerHTML = `<div class="gantt-week"><div class="gantt-week-grid" style="grid-template-columns:160px repeat(${days.length},minmax(70px,1fr));min-width:${160 + days.length * 70}px">${head}${rows}</div></div>`;
+}
+
+function renderWeek() {
+  const weekStart = startOfWeek(state.date);
+  const days = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(weekStart);
+    d.setDate(d.getDate() + i);
+    return d;
+  });
+  renderDaysGrid(days, 'No hay órdenes programadas esta semana.');
+}
+
+function renderRange() {
+  if (state.rangoHasta < state.rangoDesde) {
+    els.resumen.textContent = '';
+    els.container.innerHTML = '<div class="gantt-empty">La fecha "Hasta" debe ser igual o posterior a "Desde".</div>';
+    return;
+  }
+  const totalDias = Math.round((state.rangoHasta - state.rangoDesde) / 86400000) + 1;
+  if (totalDias > MAX_RANGO_DIAS) {
+    els.resumen.textContent = '';
+    els.container.innerHTML = `<div class="gantt-empty">El rango es muy amplio (${totalDias} días). Elige un rango de máximo ${MAX_RANGO_DIAS} días.</div>`;
+    return;
+  }
+  const days = Array.from({ length: totalDias }, (_, i) => {
+    const d = new Date(state.rangoDesde);
+    d.setDate(d.getDate() + i);
+    return d;
+  });
+  renderDaysGrid(days, 'No hay órdenes programadas en este rango.');
 }
 
 function render() {
   if (state.view === 'dia') {
     renderDay();
-  } else {
+  } else if (state.view === 'semana') {
     renderWeek();
+  } else {
+    renderRange();
   }
 }
 
@@ -209,28 +247,74 @@ function setToggle(group, value) {
   [...group.children].forEach((btn) => btn.classList.toggle('active', btn.dataset.value === value));
 }
 
+function parseInputDate(value) {
+  const [y, m, d] = value.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
+
+function updateFieldVisibility() {
+  const isRango = state.view === 'rango';
+  els.fieldFechaUnica.style.display = isRango ? 'none' : '';
+  els.fieldDesde.style.display = isRango ? '' : 'none';
+  els.fieldHasta.style.display = isRango ? '' : 'none';
+}
+
 els.fecha.addEventListener('change', () => {
   if (!els.fecha.value) return;
-  const [y, m, d] = els.fecha.value.split('-').map(Number);
-  state.date = new Date(y, m - 1, d);
+  state.date = parseInputDate(els.fecha.value);
+  render();
+});
+
+els.desde.addEventListener('change', () => {
+  if (!els.desde.value) return;
+  state.rangoDesde = parseInputDate(els.desde.value);
+  render();
+});
+
+els.hasta.addEventListener('change', () => {
+  if (!els.hasta.value) return;
+  state.rangoHasta = parseInputDate(els.hasta.value);
   render();
 });
 
 els.prev.addEventListener('click', () => {
-  state.date.setDate(state.date.getDate() - (state.view === 'semana' ? 7 : 1));
-  els.fecha.value = toInputValue(state.date);
+  if (state.view === 'rango') {
+    const span = Math.round((state.rangoHasta - state.rangoDesde) / 86400000) + 1;
+    state.rangoDesde.setDate(state.rangoDesde.getDate() - span);
+    state.rangoHasta.setDate(state.rangoHasta.getDate() - span);
+    els.desde.value = toInputValue(state.rangoDesde);
+    els.hasta.value = toInputValue(state.rangoHasta);
+  } else {
+    state.date.setDate(state.date.getDate() - (state.view === 'semana' ? 7 : 1));
+    els.fecha.value = toInputValue(state.date);
+  }
   render();
 });
 
 els.next.addEventListener('click', () => {
-  state.date.setDate(state.date.getDate() + (state.view === 'semana' ? 7 : 1));
-  els.fecha.value = toInputValue(state.date);
+  if (state.view === 'rango') {
+    const span = Math.round((state.rangoHasta - state.rangoDesde) / 86400000) + 1;
+    state.rangoDesde.setDate(state.rangoDesde.getDate() + span);
+    state.rangoHasta.setDate(state.rangoHasta.getDate() + span);
+    els.desde.value = toInputValue(state.rangoDesde);
+    els.hasta.value = toInputValue(state.rangoHasta);
+  } else {
+    state.date.setDate(state.date.getDate() + (state.view === 'semana' ? 7 : 1));
+    els.fecha.value = toInputValue(state.date);
+  }
   render();
 });
 
 els.today.addEventListener('click', () => {
-  state.date = new Date();
-  els.fecha.value = toInputValue(state.date);
+  if (state.view === 'rango') {
+    state.rangoDesde = new Date();
+    state.rangoHasta = new Date();
+    els.desde.value = toInputValue(state.rangoDesde);
+    els.hasta.value = toInputValue(state.rangoHasta);
+  } else {
+    state.date = new Date();
+    els.fecha.value = toInputValue(state.date);
+  }
   render();
 });
 
@@ -239,6 +323,7 @@ els.viewToggle.addEventListener('click', (e) => {
   if (!btn) return;
   state.view = btn.dataset.value;
   setToggle(els.viewToggle, state.view);
+  updateFieldVisibility();
   render();
 });
 
@@ -252,6 +337,8 @@ els.groupToggle.addEventListener('click', (e) => {
 
 async function init() {
   els.fecha.value = toInputValue(state.date);
+  els.desde.value = toInputValue(state.rangoDesde);
+  els.hasta.value = toInputValue(state.rangoHasta);
   try {
     const res = await fetch('data/ordenes.json', { cache: 'no-store' });
     const payload = await res.json();
