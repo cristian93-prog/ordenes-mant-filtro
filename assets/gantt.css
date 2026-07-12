@@ -58,7 +58,7 @@
 
 .gantt-timeline-header {
   display: flex;
-  padding-left: 160px;
+  padding-left: 200px;
 }
 
 .gantt-day-block {
@@ -97,15 +97,15 @@
 }
 
 .gantt-row-label {
-  width: 160px;
-  flex: 0 0 160px;
+  width: 200px;
+  flex: 0 0 200px;
   padding: 8px 10px;
   font-size: 0.85rem;
   display: flex;
   align-items: center;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
+  line-height: 1.25;
+  word-break: break-word;
 }
 
 .gantt-track {
