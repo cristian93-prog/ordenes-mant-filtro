@@ -56,21 +56,39 @@
   overflow-x: auto;
 }
 
-.gantt-day-inner {
-  min-width: 900px;
-}
-
-.gantt-hours {
+.gantt-timeline-header {
   display: flex;
   padding-left: 160px;
 }
 
-.gantt-hours span {
+.gantt-day-block {
   flex: 1;
-  font-size: 0.7rem;
+  min-width: 130px;
+  border-left: 1px solid var(--border);
+}
+
+.gantt-day-block:first-child {
+  border-left: none;
+}
+
+.gantt-day-label {
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 6px 0 4px;
+  border-bottom: 1px solid var(--border);
+}
+
+.gantt-hour-ticks {
+  display: flex;
+}
+
+.gantt-hour-ticks span {
+  flex: 1;
+  font-size: 0.65rem;
   color: var(--muted);
   text-align: left;
-  padding: 6px 0 6px 2px;
+  padding: 4px 0 4px 3px;
 }
 
 .gantt-row {

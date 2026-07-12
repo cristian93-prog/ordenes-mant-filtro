@@ -119,35 +119,49 @@ function buildEntities(orders, groupBy) {
   return new Map([...map.entries()].sort((a, b) => a[0].localeCompare(b[0], 'es')));
 }
 
-function renderDay() {
-  const targetStr = toDDMMYYYY(state.date);
-  const dayOrders = state.orders.filter((o) => o.FechaPrevista === targetStr);
+function renderTimeline(days, emptyMsg) {
+  const dayStrs = days.map(toDDMMYYYY);
+  const rangeOrders = state.orders.filter((o) => dayStrs.includes(o.FechaPrevista));
+  const sameDay = dayStrs.length === 1;
+  els.resumen.textContent = sameDay
+    ? `${rangeOrders.length} orden(es) el ${dayStrs[0]}`
+    : `${rangeOrders.length} orden(es) entre el ${dayStrs[0]} y el ${dayStrs[dayStrs.length - 1]}`;
 
-  els.resumen.textContent = `${dayOrders.length} orden(es) el ${targetStr}`;
-
-  if (dayOrders.length === 0) {
-    els.container.innerHTML = '<div class="gantt-empty">No hay órdenes programadas este día.</div>';
+  if (rangeOrders.length === 0) {
+    els.container.innerHTML = `<div class="gantt-empty">${emptyMsg}</div>`;
     return;
   }
 
-  const entities = buildEntities(dayOrders, state.groupBy);
+  const entities = buildEntities(rangeOrders, state.groupBy);
+  const totalMin = days.length * 1440;
+  const hourTickHours = [0, 4, 8, 12, 16, 20];
 
-  const hourSpans = Array.from({ length: 24 }, (_, h) => `<span>${h % 2 === 0 ? String(h).padStart(2, '0') : ''}</span>`).join('');
+  const dayBlocks = days.map((d) => `
+    <div class="gantt-day-block">
+      <div class="gantt-day-label">${DIAS_SEMANA[(d.getDay() + 6) % 7]} ${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}</div>
+      <div class="gantt-hour-ticks">${hourTickHours.map((h) => `<span>${String(h).padStart(2, '0')}</span>`).join('')}</div>
+    </div>
+  `).join('');
+
+  const trackBg = `background-image:linear-gradient(to right, var(--border) 1px, transparent 1px), linear-gradient(to right, var(--muted) 1px, transparent 1px);background-size:calc(100% / ${days.length * 24}) 100%, calc(100% / ${days.length}) 100%;`;
 
   const rows = [...entities.entries()].map(([name, items]) => {
-    const bars = items.map((it) => ({
-      startMin: Math.min(1439, parseHoraInicio(it.order.HoraInicio)),
-      durMin: Math.max(20, parseHoras(it.order.HorasProgramadas)),
-      order: it.order,
-      shared: it.shared,
-    }));
+    const bars = items.map((it) => {
+      const dayIdx = Math.max(0, dayStrs.indexOf(it.order.FechaPrevista));
+      return {
+        startMin: dayIdx * 1440 + Math.min(1439, parseHoraInicio(it.order.HoraInicio)),
+        durMin: Math.max(20, parseHoras(it.order.HorasProgramadas)),
+        order: it.order,
+        shared: it.shared,
+      };
+    });
     assignLanes(bars);
     const laneCount = Math.max(1, ...bars.map((b) => b.lane + 1));
     const trackHeight = laneCount * 34 + 8;
 
     const barsHtml = bars.map((b) => {
-      const leftPct = Math.min(98, (b.startMin / 1440) * 100);
-      const widthPct = Math.max(2, Math.min(100 - leftPct, (b.durMin / 1440) * 100));
+      const leftPct = Math.min(99, (b.startMin / totalMin) * 100);
+      const widthPct = Math.max(100 / (days.length * 24) / 2, Math.min(100 - leftPct, (b.durMin / totalMin) * 100));
       const cls = ESTADO_CLASSES[b.order.Estado] || 'bar-en-curso';
       return `<div class="gantt-bar ${cls}${b.shared ? ' shared' : ''}" style="left:${leftPct}%;width:${widthPct}%;top:${4 + b.lane * 34}px" title="${escapeHtml(fullDetail(b.order))}">
         <span class="num">${escapeHtml(b.order.NoOrden)}</span>
@@ -157,14 +171,18 @@ function renderDay() {
 
     return `<div class="gantt-row">
       <div class="gantt-row-label" title="${escapeHtml(name)}">${escapeHtml(name)}</div>
-      <div class="gantt-track" style="height:${trackHeight}px">${barsHtml}</div>
+      <div class="gantt-track" style="height:${trackHeight}px;${trackBg}">${barsHtml}</div>
     </div>`;
   }).join('');
 
-  els.container.innerHTML = `<div class="gantt-day"><div class="gantt-day-inner">
-    <div class="gantt-hours">${hourSpans}</div>
+  els.container.innerHTML = `<div class="gantt-day"><div class="gantt-day-inner" style="min-width:${Math.max(900, days.length * 260)}px">
+    <div class="gantt-timeline-header">${dayBlocks}</div>
     ${rows}
   </div></div>`;
+}
+
+function renderDay() {
+  renderTimeline([state.date], 'No hay órdenes programadas este día.');
 }
 
 function renderDaysGrid(days, emptyMsg) {
@@ -230,7 +248,7 @@ function renderRange() {
     d.setDate(d.getDate() + i);
     return d;
   });
-  renderDaysGrid(days, 'No hay órdenes programadas en este rango.');
+  renderTimeline(days, 'No hay órdenes programadas en este rango.');
 }
 
 function render() {
