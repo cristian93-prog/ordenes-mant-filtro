@@ -134,7 +134,7 @@ function renderTimeline(days, emptyMsg) {
 
   const entities = buildEntities(rangeOrders, state.groupBy);
   const totalMin = days.length * 1440;
-  const hourTickHours = [0, 4, 8, 12, 16, 20];
+  const hourTickHours = [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22];
 
   const dayBlocks = days.map((d) => `
     <div class="gantt-day-block">

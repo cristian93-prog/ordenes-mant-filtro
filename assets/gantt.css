@@ -63,7 +63,7 @@
 
 .gantt-day-block {
   flex: 1;
-  min-width: 130px;
+  min-width: 220px;
   border-left: 1px solid var(--border);
 }
 
