@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Órdenes de Mantenimiento - Dashboard</title>
+<link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="assets/dashboard.css">
+</head>
+<body>
+<header class="header-bar">
+  <div>
+    <h1>Órdenes de Mantenimiento</h1>
+    <p id="meta" class="meta">Cargando datos…</p>
+  </div>
+  <img src="assets/logo.png" alt="La Holandesa" class="logo">
+</header>
+
+<nav class="nav-tabs">
+  <a href="index.html">Listado</a>
+  <a href="gantt.html">Gantt</a>
+  <a href="dashboard.html" class="active">Dashboard</a>
+</nav>
+
+<main>
+  <p class="meta">Ventana de análisis: últimas 12 semanas (según Fecha Prevista).</p>
+
+  <div class="kpi-row" id="kpiRow"></div>
+
+  <section class="dash-panel">
+    <h2>Cumplimiento por semana</h2>
+    <div id="cumplimientoChart" class="week-chart"></div>
+    <div class="legend">
+      <span><i class="dot dot-ejecutado"></i>Ejecutado</span>
+      <span><i class="dot dot-en-curso"></i>En Curso</span>
+      <span><i class="dot dot-reprogramado"></i>Reprogramado</span>
+    </div>
+  </section>
+
+  <section class="dash-panel">
+    <h2>Preventivo vs Correctivo</h2>
+    <div id="tipoBar" class="tipo-bar"></div>
+    <div id="tipoLegend" class="legend"></div>
+    <div class="table-wrap" style="margin-top:14px">
+      <table id="plantaTable">
+        <thead>
+          <tr><th>Planta</th><th>Órdenes</th><th>% Preventivo</th><th>Correctivo Emergente</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="dash-panel">
+    <h2>Top 10 máquinas problemáticas</h2>
+    <p class="meta">Ordenado por reprogramaciones + comentarios con alerta, últimas 12 semanas.</p>
+    <div class="table-wrap">
+      <table id="maquinasTable">
+        <thead>
+          <tr><th>Máquina</th><th>Planta</th><th>Órdenes</th><th>Reprogramadas</th><th>Con alerta</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<script src="assets/dashboard.js"></script>
+</body>
+</html>

@@ -1,0 +1,133 @@
+.kpi-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.kpi-card {
+  flex: 1 1 180px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+
+.kpi-card .label {
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin: 0 0 6px;
+}
+
+.kpi-card .value {
+  font-size: 1.6rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.kpi-card .trend {
+  font-size: 0.8rem;
+  margin-top: 4px;
+}
+
+.trend-up { color: #a32626; }
+.trend-down { color: #1e6b3a; }
+.trend-flat { color: var(--muted); }
+
+.dash-panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 18px 20px;
+  margin-bottom: 20px;
+}
+
+.dash-panel h2 {
+  font-size: 1rem;
+  margin: 0 0 14px;
+}
+
+.week-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  height: 180px;
+  overflow-x: auto;
+  padding-top: 20px;
+}
+
+.week-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 34px;
+  flex: 1;
+  height: 100%;
+  position: relative;
+}
+
+.week-col .count {
+  font-size: 0.65rem;
+  color: var(--muted);
+  margin-bottom: 4px;
+  white-space: nowrap;
+}
+
+.week-col .stack {
+  width: 100%;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.week-col .seg-reprogramado { background: #fbdada; }
+.week-col .seg-en-curso { background: #fdf3c8; }
+.week-col .seg-ejecutado { background: #dcf5e3; }
+
+.week-col .wk-label {
+  font-size: 0.65rem;
+  color: var(--muted);
+  margin-top: 6px;
+  white-space: nowrap;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 12px;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.legend .dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  margin-right: 6px;
+  vertical-align: -1px;
+}
+
+.dot-ejecutado { background: #dcf5e3; border: 1px solid #1e6b3a; }
+.dot-en-curso { background: #fdf3c8; border: 1px solid #8a6d00; }
+.dot-reprogramado { background: #fbdada; border: 1px solid #a32626; }
+
+.tipo-bar {
+  display: flex;
+  height: 28px;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.tipo-seg {
+  height: 100%;
+}
+
+@media (prefers-color-scheme: dark) {
+  .week-col .seg-reprogramado { background: #3a2020; }
+  .week-col .seg-en-curso { background: #3a3418; }
+  .week-col .seg-ejecutado { background: #1c3326; }
+}
