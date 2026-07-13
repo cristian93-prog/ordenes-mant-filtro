@@ -1,4 +1,3 @@
-const WEEKS_WINDOW = 12;
 const ANIO_CUMPLIMIENTO = '2026';
 
 const TIPO_COLORS = {
@@ -15,6 +14,11 @@ const ALERT_KEYWORDS = [
   'PENDIENTE', 'PROBLEMA', 'FUGA', 'DETENID', 'CUIDADO', 'RECURRENTE',
   'PLANIFICAR', 'COORDINAR', 'PROGRAMAR',
 ];
+
+const state = {
+  ytdOrders: [],
+  weeksYTD: [],
+};
 
 function hasAlert(comentario) {
   const upper = (comentario || '').toUpperCase();
@@ -51,30 +55,47 @@ async function init() {
 
 function build(orders) {
   const weeksAll = Array.from(new Set(orders.map((o) => o.Semana).filter(Boolean))).sort();
-  const lastWeeks = weeksAll.slice(-WEEKS_WINDOW);
-  const weekSet = new Set(lastWeeks);
-  const windowOrders = orders.filter((o) => weekSet.has(o.Semana));
-
   const weeksYTD = weeksAll.filter((w) => w.startsWith(`${ANIO_CUMPLIMIENTO}-`));
   const ytdSet = new Set(weeksYTD);
   const ytdOrders = orders.filter((o) => ytdSet.has(o.Semana));
 
-  buildKpis(windowOrders, lastWeeks);
+  state.ytdOrders = ytdOrders;
+  state.weeksYTD = weeksYTD;
+
+  buildKpis(ytdOrders, weeksYTD);
   buildCumplimiento(ytdOrders, weeksYTD);
-  buildTipo(windowOrders);
-  buildPlantaTable(windowOrders);
-  buildMaquinasTable(windowOrders);
+  buildTipo(ytdOrders);
+  buildSemanaFiltro(weeksYTD);
+  buildPlantaTable(ytdOrders);
+  buildMaquinasTable(ytdOrders);
 }
 
-function buildKpis(windowOrders, lastWeeks) {
-  const total = windowOrders.length;
-  const ejecutado = windowOrders.filter((o) => o.Estado === 'Ejecutado').length;
-  const reprogramado = windowOrders.filter((o) => o.Estado === 'Reprogramado').length;
+function buildSemanaFiltro(weeksYTD) {
+  const select = document.getElementById('semanaFiltro');
+  weeksYTD.slice().reverse().forEach((wk) => {
+    const opt = document.createElement('option');
+    opt.value = wk;
+    opt.textContent = wk;
+    select.appendChild(opt);
+  });
+  select.addEventListener('change', () => {
+    const orders = select.value
+      ? state.ytdOrders.filter((o) => o.Semana === select.value)
+      : state.ytdOrders;
+    buildPlantaTable(orders);
+    buildMaquinasTable(orders);
+  });
+}
 
-  const currentWeek = lastWeeks[lastWeeks.length - 1];
-  const prevWeek = lastWeeks[lastWeeks.length - 2];
-  const currentOrders = windowOrders.filter((o) => o.Semana === currentWeek);
-  const prevOrders = windowOrders.filter((o) => o.Semana === prevWeek);
+function buildKpis(ytdOrders, weeksYTD) {
+  const total = ytdOrders.length;
+  const ejecutado = ytdOrders.filter((o) => o.Estado === 'Ejecutado').length;
+  const reprogramado = ytdOrders.filter((o) => o.Estado === 'Reprogramado').length;
+
+  const currentWeek = weeksYTD[weeksYTD.length - 1];
+  const prevWeek = weeksYTD[weeksYTD.length - 2];
+  const currentOrders = ytdOrders.filter((o) => o.Semana === currentWeek);
+  const prevOrders = ytdOrders.filter((o) => o.Semana === prevWeek);
   const currentReprogPct = pct(currentOrders.filter((o) => o.Estado === 'Reprogramado').length, currentOrders.length);
   const prevReprogPct = pct(prevOrders.filter((o) => o.Estado === 'Reprogramado').length, prevOrders.length);
   const diff = Math.round((currentReprogPct - prevReprogPct) * 10) / 10;
@@ -84,7 +105,7 @@ function buildKpis(windowOrders, lastWeeks) {
   if (diff < 0) trendHtml = `<span class="trend trend-down">▼ ${Math.abs(diff)} pts vs semana anterior</span>`;
 
   const cards = [
-    { label: `Órdenes (últimas ${WEEKS_WINDOW} semanas)`, value: total, extra: '' },
+    { label: `Órdenes (${ANIO_CUMPLIMIENTO})`, value: total, extra: '' },
     { label: '% Ejecutado', value: `${pct(ejecutado, total)}%`, extra: '' },
     { label: '% Reprogramado', value: `${pct(reprogramado, total)}%`, extra: trendHtml },
   ];
@@ -98,9 +119,9 @@ function buildKpis(windowOrders, lastWeeks) {
   `).join('');
 }
 
-function buildCumplimiento(windowOrders, lastWeeks) {
-  const html = lastWeeks.map((wk) => {
-    const wkOrders = windowOrders.filter((o) => o.Semana === wk);
+function buildCumplimiento(ytdOrders, weeksYTD) {
+  const html = weeksYTD.map((wk) => {
+    const wkOrders = ytdOrders.filter((o) => o.Semana === wk);
     const total = wkOrders.length;
     const ejecutado = wkOrders.filter((o) => o.Estado === 'Ejecutado').length;
     const enCurso = wkOrders.filter((o) => o.Estado === 'En Curso').length;
@@ -123,10 +144,10 @@ function buildCumplimiento(windowOrders, lastWeeks) {
   document.getElementById('cumplimientoChart').innerHTML = html;
 }
 
-function buildTipo(windowOrders) {
-  const total = windowOrders.length;
+function buildTipo(ytdOrders) {
+  const total = ytdOrders.length;
   const counts = {};
-  windowOrders.forEach((o) => { counts[o.Tipo] = (counts[o.Tipo] || 0) + 1; });
+  ytdOrders.forEach((o) => { counts[o.Tipo] = (counts[o.Tipo] || 0) + 1; });
   const tipos = Object.keys(TIPO_COLORS).filter((t) => counts[t]);
 
   document.getElementById('tipoBar').innerHTML = tipos.map((t) => {
@@ -139,9 +160,9 @@ function buildTipo(windowOrders) {
   `).join('');
 }
 
-function buildPlantaTable(windowOrders) {
+function buildPlantaTable(orders) {
   const map = new Map();
-  windowOrders.forEach((o) => {
+  orders.forEach((o) => {
     if (!map.has(o.Planta)) map.set(o.Planta, []);
     map.get(o.Planta).push(o);
   });
@@ -170,9 +191,9 @@ function buildPlantaTable(windowOrders) {
   document.querySelector('#plantaTable tbody').innerHTML = rows;
 }
 
-function buildMaquinasTable(windowOrders) {
+function buildMaquinasTable(orders) {
   const map = new Map();
-  windowOrders.forEach((o) => {
+  orders.forEach((o) => {
     if (!o.DescripcionMaquina) return;
     if (!map.has(o.DescripcionMaquina)) map.set(o.DescripcionMaquina, []);
     map.get(o.DescripcionMaquina).push(o);

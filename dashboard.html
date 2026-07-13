@@ -23,7 +23,7 @@
 </nav>
 
 <main>
-  <p class="meta">KPIs, Preventivo/Correctivo, Planta y Máquinas: últimas 12 semanas (según Fecha Prevista).</p>
+  <p class="meta">Todos los paneles muestran el año 2026 completo (según Fecha Prevista).</p>
 
   <div class="kpi-row" id="kpiRow"></div>
 
@@ -40,9 +40,21 @@
 
   <section class="dash-panel">
     <h2>Preventivo vs Correctivo</h2>
+    <p class="meta">Año 2026 completo.</p>
     <div id="tipoBar" class="tipo-bar"></div>
     <div id="tipoLegend" class="legend"></div>
-    <div class="table-wrap" style="margin-top:14px">
+  </section>
+
+  <section class="dash-panel">
+    <div class="field" style="max-width:260px">
+      <label for="semanaFiltro">Filtrar Planta y Máquinas por semana</label>
+      <select id="semanaFiltro"><option value="">Todas las semanas (2026)</option></select>
+    </div>
+  </section>
+
+  <section class="dash-panel">
+    <h2>Planta</h2>
+    <div class="table-wrap">
       <table id="plantaTable">
         <thead>
           <tr><th>Planta</th><th>Órdenes Trabajo</th><th>% Preventivo</th><th>Horas-Hombre (Interna)</th><th>Horas-Hombre (Externa)</th><th>% Correctivo Emergente</th></tr>
@@ -54,7 +66,7 @@
 
   <section class="dash-panel">
     <h2>Top 10 máquinas problemáticas</h2>
-    <p class="meta">Ordenado por reprogramaciones + comentarios con alerta, últimas 12 semanas.</p>
+    <p class="meta">Ordenado por reprogramaciones + comentarios con alerta.</p>
     <div class="table-wrap">
       <table id="maquinasTable">
         <thead>
