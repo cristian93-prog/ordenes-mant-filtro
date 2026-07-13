@@ -1,4 +1,5 @@
 const WEEKS_WINDOW = 12;
+const ANIO_CUMPLIMIENTO = '2026';
 
 const TIPO_COLORS = {
   'PREVENTIVO': '#3fa564',
@@ -54,8 +55,12 @@ function build(orders) {
   const weekSet = new Set(lastWeeks);
   const windowOrders = orders.filter((o) => weekSet.has(o.Semana));
 
+  const weeksYTD = weeksAll.filter((w) => w.startsWith(`${ANIO_CUMPLIMIENTO}-`));
+  const ytdSet = new Set(weeksYTD);
+  const ytdOrders = orders.filter((o) => ytdSet.has(o.Semana));
+
   buildKpis(windowOrders, lastWeeks);
-  buildCumplimiento(windowOrders, lastWeeks);
+  buildCumplimiento(ytdOrders, weeksYTD);
   buildTipo(windowOrders);
   buildPlantaTable(windowOrders);
   buildMaquinasTable(windowOrders);
@@ -144,18 +149,21 @@ function buildPlantaTable(windowOrders) {
   const horasPorPlanta = [...map.entries()].map(([planta, list]) => ({
     planta,
     list,
-    horas: list.reduce((sum, o) => sum + parseHoras(o.HorasReales), 0),
+    horasInterna: list.filter((o) => o.OrdenType === 'Interna').reduce((sum, o) => sum + parseHoras(o.HorasReales), 0),
+    horasExterna: list.filter((o) => o.OrdenType === 'Externa').reduce((sum, o) => sum + parseHoras(o.HorasReales), 0),
   }));
-  const totalHoras = horasPorPlanta.reduce((sum, p) => sum + p.horas, 0);
+  const totalHorasInterna = horasPorPlanta.reduce((sum, p) => sum + p.horasInterna, 0);
+  const totalHorasExterna = horasPorPlanta.reduce((sum, p) => sum + p.horasExterna, 0);
 
-  const rows = horasPorPlanta.sort((a, b) => b.list.length - a.list.length).map(({ planta, list, horas }) => {
+  const rows = horasPorPlanta.sort((a, b) => b.list.length - a.list.length).map(({ planta, list, horasInterna, horasExterna }) => {
     const preventivo = list.filter((o) => o.Tipo === 'PREVENTIVO').length;
     const emergente = list.filter((o) => o.Tipo === 'CORRECTIVO EMERGENTE').length;
     return `<tr>
       <td>${escapeHtml(planta)}</td>
       <td>${list.length}</td>
       <td>${pct(preventivo, list.length)}%</td>
-      <td>${pct(horas, totalHoras)}% (${Math.round(horas)} h)</td>
+      <td>${pct(horasInterna, totalHorasInterna)}% (${Math.round(horasInterna)} h)</td>
+      <td>${pct(horasExterna, totalHorasExterna)}% (${Math.round(horasExterna)} h)</td>
       <td>${pct(emergente, list.length)}%</td>
     </tr>`;
   }).join('');
