@@ -64,6 +64,7 @@
   flex: 1;
   height: 100%;
   position: relative;
+  cursor: help;
 }
 
 .week-col .count {

@@ -30,6 +30,11 @@ function pct(part, total) {
   return total === 0 ? 0 : Math.round((part / total) * 1000) / 10;
 }
 
+function parseHoras(str) {
+  const n = parseFloat((str || '').replace(',', '.'));
+  return Number.isFinite(n) ? n : 0;
+}
+
 async function init() {
   const meta = document.getElementById('meta');
   try {
@@ -99,7 +104,8 @@ function buildCumplimiento(windowOrders, lastWeeks) {
     const pCurso = pct(enCurso, total);
     const pEjec = pct(ejecutado, total);
     const label = wk.replace(/^\d{4}-W/, 'S');
-    return `<div class="week-col">
+    const detalle = `Semana ${wk} · ${total} orden(es)\nEjecutado: ${ejecutado} (${pEjec}%)\nEn Curso: ${enCurso} (${pCurso}%)\nReprogramado: ${reprogramado} (${pReprog}%)`;
+    return `<div class="week-col" title="${escapeHtml(detalle)}">
       <span class="count">${total}</span>
       <div class="stack">
         <div class="seg-reprogramado" style="height:${pReprog}%"></div>
@@ -134,14 +140,23 @@ function buildPlantaTable(windowOrders) {
     if (!map.has(o.Planta)) map.set(o.Planta, []);
     map.get(o.Planta).push(o);
   });
-  const rows = [...map.entries()].sort((a, b) => b[1].length - a[1].length).map(([planta, list]) => {
+
+  const horasPorPlanta = [...map.entries()].map(([planta, list]) => ({
+    planta,
+    list,
+    horas: list.reduce((sum, o) => sum + parseHoras(o.HorasReales), 0),
+  }));
+  const totalHoras = horasPorPlanta.reduce((sum, p) => sum + p.horas, 0);
+
+  const rows = horasPorPlanta.sort((a, b) => b.list.length - a.list.length).map(({ planta, list, horas }) => {
     const preventivo = list.filter((o) => o.Tipo === 'PREVENTIVO').length;
     const emergente = list.filter((o) => o.Tipo === 'CORRECTIVO EMERGENTE').length;
     return `<tr>
       <td>${escapeHtml(planta)}</td>
       <td>${list.length}</td>
       <td>${pct(preventivo, list.length)}%</td>
-      <td>${emergente}</td>
+      <td>${pct(horas, totalHoras)}% (${Math.round(horas)} h)</td>
+      <td>${pct(emergente, list.length)}%</td>
     </tr>`;
   }).join('');
   document.querySelector('#plantaTable tbody').innerHTML = rows;
