@@ -1,8 +1,6 @@
 name: Actualizar datos de Órdenes de Mantenimiento
 
 on:
-  schedule:
-    - cron: '6,21,36,51 * * * *'
   workflow_dispatch: {}
 
 permissions:
@@ -35,5 +33,6 @@ jobs:
             echo "Sin cambios"
           else
             git commit -m "Actualizar datos de órdenes de mantenimiento"
+            git pull --rebase origin main
             git push
           fi
