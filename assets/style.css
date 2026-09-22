@@ -32,6 +32,12 @@ header {
   width: auto;
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
 h1 {
   margin: 0 0 4px;
   font-size: 1.5rem;
@@ -98,6 +104,68 @@ main {
   border: 1px solid var(--border);
   border-radius: 6px;
   font-size: 0.9rem;
+}
+
+.multi-select {
+  position: relative;
+}
+
+.multi-select-btn {
+  width: 100%;
+  text-align: left;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--panel);
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.multi-select-panel {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 20;
+  min-width: 220px;
+  max-height: 280px;
+  overflow-y: auto;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+  padding: 8px;
+}
+
+.multi-select-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 6px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+
+.multi-select-actions button {
+  padding: 3px 8px;
+  font-size: 0.75rem;
+}
+
+.multi-select-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 4px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.multi-select-option:hover {
+  background: var(--bg);
+}
+
+.multi-select-option input {
+  width: auto;
+  margin: 0;
 }
 
 .field-btn {

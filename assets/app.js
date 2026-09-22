@@ -4,6 +4,7 @@ const state = {
   orders: [],
   filtered: [],
   page: 1,
+  semanasSeleccionadas: new Set(),
 };
 
 const els = {
@@ -16,14 +17,18 @@ const els = {
   estado: document.getElementById('estado'),
   tecnico: document.getElementById('tecnico'),
   fecha: document.getElementById('fecha'),
-  semana: document.getElementById('semana'),
-  semanas: document.getElementById('semanas'),
+  semanaMultiSelect: document.getElementById('semanaMultiSelect'),
+  semanaBtn: document.getElementById('semanaBtn'),
+  semanaPanel: document.getElementById('semanaPanel'),
+  semanaOptions: document.getElementById('semanaOptions'),
+  semanaLimpiar: document.getElementById('semanaLimpiar'),
   clear: document.getElementById('clear'),
   tbody: document.getElementById('tbody'),
   resultCount: document.getElementById('resultCount'),
   prev: document.getElementById('prev'),
   next: document.getElementById('next'),
   pageInfo: document.getElementById('pageInfo'),
+  exportExcel: document.getElementById('exportExcel'),
 };
 
 function isoToDDMMYYYY(isoDate) {
@@ -52,12 +57,33 @@ function buildFilters(orders) {
   populateSelect(els.estado, uniqueSorted(orders.map((o) => o.Estado)));
   const tecnicos = uniqueSorted(orders.flatMap((o) => [o.Tecnico1, o.Tecnico2]));
   populateSelect(els.tecnico, tecnicos);
-  const semanas = uniqueSorted(orders.map((o) => o.Semana)).sort().reverse();
-  semanas.forEach((s) => {
-    const opt = document.createElement('option');
-    opt.value = s;
-    els.semanas.appendChild(opt);
+  buildSemanaOptions(uniqueSorted(orders.map((o) => o.Semana)).sort().reverse());
+}
+
+function buildSemanaOptions(semanas) {
+  els.semanaOptions.innerHTML = semanas.map((s) => `
+    <label class="multi-select-option">
+      <input type="checkbox" value="${s}">
+      <span>${s}</span>
+    </label>
+  `).join('');
+
+  els.semanaOptions.querySelectorAll('input[type="checkbox"]').forEach((cb) => {
+    cb.addEventListener('change', () => {
+      if (cb.checked) {
+        state.semanasSeleccionadas.add(cb.value);
+      } else {
+        state.semanasSeleccionadas.delete(cb.value);
+      }
+      updateSemanaBtnLabel();
+      applyFilters();
+    });
   });
+}
+
+function updateSemanaBtnLabel() {
+  const n = state.semanasSeleccionadas.size;
+  els.semanaBtn.textContent = n === 0 ? 'Todas' : n === 1 ? [...state.semanasSeleccionadas][0] : `${n} semanas`;
 }
 
 function applyFilters() {
@@ -69,7 +95,6 @@ function applyFilters() {
   const estado = els.estado.value;
   const tecnico = els.tecnico.value;
   const fecha = els.fecha.value ? isoToDDMMYYYY(els.fecha.value) : '';
-  const semana = els.semana.value.trim();
 
   state.filtered = state.orders.filter((o) => {
     if (maquina && o.DescripcionMaquina !== maquina) return false;
@@ -79,7 +104,7 @@ function applyFilters() {
     if (estado && o.Estado !== estado) return false;
     if (tecnico && o.Tecnico1 !== tecnico && o.Tecnico2 !== tecnico) return false;
     if (fecha && o.FechaPrevista !== fecha) return false;
-    if (semana && o.Semana !== semana) return false;
+    if (state.semanasSeleccionadas.size > 0 && !state.semanasSeleccionadas.has(o.Semana)) return false;
     if (q) {
       const haystack = `${o.DescripcionMaquina} ${o.Componente} ${o.Actividad} ${o.CodigoOT} ${o.NoOrden} ${o.ComentarioCierre}`.toLowerCase();
       if (!haystack.includes(q)) return false;
@@ -170,9 +195,26 @@ async function init() {
   }
 }
 
-[els.q, els.maquina, els.planta, els.tipo, els.tipoOrden, els.estado, els.tecnico, els.fecha, els.semana].forEach((el) => {
+[els.q, els.maquina, els.planta, els.tipo, els.tipoOrden, els.estado, els.tecnico, els.fecha].forEach((el) => {
   el.addEventListener('input', applyFilters);
   el.addEventListener('change', applyFilters);
+});
+
+els.semanaBtn.addEventListener('click', () => {
+  els.semanaPanel.hidden = !els.semanaPanel.hidden;
+});
+
+document.addEventListener('click', (e) => {
+  if (!els.semanaMultiSelect.contains(e.target)) {
+    els.semanaPanel.hidden = true;
+  }
+});
+
+els.semanaLimpiar.addEventListener('click', () => {
+  state.semanasSeleccionadas.clear();
+  els.semanaOptions.querySelectorAll('input[type="checkbox"]').forEach((cb) => { cb.checked = false; });
+  updateSemanaBtnLabel();
+  applyFilters();
 });
 
 els.clear.addEventListener('click', () => {
@@ -184,11 +226,33 @@ els.clear.addEventListener('click', () => {
   els.estado.value = '';
   els.tecnico.value = '';
   els.fecha.value = '';
-  els.semana.value = '';
+  state.semanasSeleccionadas.clear();
+  els.semanaOptions.querySelectorAll('input[type="checkbox"]').forEach((cb) => { cb.checked = false; });
+  updateSemanaBtnLabel();
   applyFilters();
 });
 
 els.prev.addEventListener('click', () => { state.page -= 1; render(); });
 els.next.addEventListener('click', () => { state.page += 1; render(); });
+
+const EXPORT_COLUMNS = [
+  ['NoOrden', 'NoOrden'], ['Tipo', 'Tipo'], ['OrdenType', 'Tipo Orden'], ['Planta', 'Planta'],
+  ['DescripcionMaquina', 'Máquina'], ['Componente', 'Componente'], ['Actividad', 'Actividad'],
+  ['Prioridad', 'Prioridad'], ['Tecnico1', 'Técnico 1'], ['Tecnico2', 'Técnico 2'],
+  ['FechaPrevista', 'Fecha Prevista'], ['Semana', 'Semana'], ['Estado', 'Estado'],
+];
+
+els.exportExcel.addEventListener('click', () => {
+  const rows = state.filtered.map((o) => {
+    const row = {};
+    EXPORT_COLUMNS.forEach(([key, label]) => { row[label] = o[key]; });
+    return row;
+  });
+  const sheet = XLSX.utils.json_to_sheet(rows);
+  const book = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(book, sheet, 'Órdenes');
+  const fecha = new Date().toISOString().slice(0, 10);
+  XLSX.writeFile(book, `ordenes-mantenimiento-${fecha}.xlsx`);
+});
 
 init();

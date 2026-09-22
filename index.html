@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Órdenes de Mantenimiento - Filtro</title>
 <link rel="stylesheet" href="assets/style.css">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
 <header class="header-bar">
@@ -12,7 +13,10 @@
     <h1>Órdenes de Mantenimiento</h1>
     <p id="meta" class="meta">Cargando datos…</p>
   </div>
-  <img src="assets/logo.png" alt="La Holandesa" class="logo">
+  <div class="header-actions">
+    <button id="exportExcel" type="button">Exportar a Excel</button>
+    <img src="assets/logo.png" alt="La Holandesa" class="logo">
+  </div>
 </header>
 
 <nav class="nav-tabs">
@@ -56,9 +60,16 @@
       <input type="date" id="fecha">
     </div>
     <div class="field">
-      <label for="semana">Semana</label>
-      <input type="text" id="semana" list="semanas" placeholder="Ej: 2026-W28">
-      <datalist id="semanas"></datalist>
+      <label for="semanaBtn">Semana</label>
+      <div class="multi-select" id="semanaMultiSelect">
+        <button type="button" id="semanaBtn" class="multi-select-btn">Todas</button>
+        <div class="multi-select-panel" id="semanaPanel" hidden>
+          <div class="multi-select-actions">
+            <button type="button" id="semanaLimpiar">Limpiar</button>
+          </div>
+          <div id="semanaOptions"></div>
+        </div>
+      </div>
     </div>
     <div class="field field-btn">
       <label class="spacer">&nbsp;</label>
