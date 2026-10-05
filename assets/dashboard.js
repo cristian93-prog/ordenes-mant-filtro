@@ -171,14 +171,18 @@ function buildTecnicosChart(orders) {
     const ejecutadas = list.filter((o) => o.Estado === 'Ejecutado').length;
     const enCurso = list.filter((o) => o.Estado === 'En Curso').length;
     const reprogramadas = list.filter((o) => o.Estado === 'Reprogramado').length;
-    const horasEnCurso = list
+    const propias = list.filter((o) => o.OrdenType === 'Interna');
+    const horasEnCurso = propias
       .filter((o) => o.Estado === 'En Curso')
       .reduce((sum, o) => sum + parseHoras(o.HorasProgramadas), 0);
-    const horasEjecutadas = list
+    const horasEjecutadas = propias
       .filter((o) => o.Estado === 'Ejecutado')
       .reduce((sum, o) => sum + parseHoras(o.HorasReales), 0);
+    const enCursoExternas = list.filter((o) => o.Estado === 'En Curso' && o.OrdenType === 'Externa').length;
+    const ejecutadasExternas = list.filter((o) => o.Estado === 'Ejecutado' && o.OrdenType === 'Externa').length;
     return {
       tecnico, ejecutadas, enCurso, reprogramadas, horasEnCurso, horasEjecutadas,
+      enCursoExternas, ejecutadasExternas,
       total: list.length,
     };
   }).sort((a, b) => b.enCurso - a.enCurso || b.horasEnCurso - a.horasEnCurso || b.total - a.total);
@@ -199,8 +203,8 @@ function buildTecnicosChart(orders) {
         ${seg(r.ejecutadas, 'est-ejecutado')}${seg(r.enCurso, 'est-en-curso')}${seg(r.reprogramadas, 'est-reprogramado')}
       </div>
       <div class="tec-stats">
-        <span title="Horas programadas de las órdenes En Curso"><strong>${r.enCurso}</strong> pendientes · ${Math.round(r.horasEnCurso)} h programadas</span>
-        <span title="Horas reales registradas al cerrar las órdenes"><strong>${r.ejecutadas}</strong> ejecutadas · ${Math.round(r.horasEjecutadas)} h reales</span>
+        <span title="Horas programadas de las órdenes Internas En Curso. ${r.enCursoExternas} orden(es) Externa(s) en supervisión no suman horas."><strong>${r.enCurso}</strong> pendientes · ${Math.round(r.horasEnCurso)} h programadas</span>
+        <span title="Horas reales de las órdenes Internas ejecutadas. ${r.ejecutadasExternas} orden(es) Externa(s) en supervisión no suman horas."><strong>${r.ejecutadas}</strong> ejecutadas · ${Math.round(r.horasEjecutadas)} h reales</span>
       </div>
     </div>`;
   }).join('');
