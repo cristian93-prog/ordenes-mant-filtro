@@ -63,7 +63,7 @@
 
 .gantt-day-block {
   flex: 1;
-  min-width: 220px;
+  min-width: 480px;
   border-left: 1px solid var(--border);
 }
 
@@ -126,6 +126,23 @@
   white-space: nowrap;
   text-overflow: ellipsis;
   cursor: default;
+}
+
+.type-dot {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.type-dot.type-interna {
+  background: #2563eb;
+}
+
+.type-dot.type-externa {
+  background: #8a6de0;
 }
 
 .gantt-bar .num {
@@ -220,6 +237,8 @@
 .dot-en-curso { background: #fdf3c8; border: 1px solid #8a6d00; }
 .dot-reprogramado { background: #fbdada; border: 1px solid #a32626; }
 .dot-shared { background: transparent; border: 1px dashed var(--muted); }
+.dot-interna { background: #2563eb; border-radius: 50%; }
+.dot-externa { background: #8a6de0; border-radius: 50%; }
 
 @media (prefers-color-scheme: dark) {
   .bar-ejecutado { background: #1c3326; color: #7fd8a0; }

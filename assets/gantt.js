@@ -134,7 +134,7 @@ function renderTimeline(days, emptyMsg) {
 
   const entities = buildEntities(rangeOrders, state.groupBy);
   const totalMin = days.length * 1440;
-  const hourTickHours = [0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22];
+  const hourTickHours = Array.from({ length: 24 }, (_, h) => h);
 
   const dayBlocks = days.map((d) => `
     <div class="gantt-day-block">
@@ -163,7 +163,9 @@ function renderTimeline(days, emptyMsg) {
       const leftPct = Math.min(99, (b.startMin / totalMin) * 100);
       const widthPct = Math.max(100 / (days.length * 24) / 2, Math.min(100 - leftPct, (b.durMin / totalMin) * 100));
       const cls = ESTADO_CLASSES[b.order.Estado] || 'bar-en-curso';
+      const tipoCls = b.order.OrdenType === 'Externa' ? 'type-externa' : 'type-interna';
       return `<div class="gantt-bar ${cls}${b.shared ? ' shared' : ''}" style="left:${leftPct}%;width:${widthPct}%;top:${4 + b.lane * 34}px" title="${escapeHtml(fullDetail(b.order))}">
+        <span class="type-dot ${tipoCls}"></span>
         <span class="num">${escapeHtml(b.order.NoOrden)}</span>
         <span class="sub">${escapeHtml(machineLabel(b.order, state.groupBy))}</span>
       </div>`;
@@ -175,7 +177,7 @@ function renderTimeline(days, emptyMsg) {
     </div>`;
   }).join('');
 
-  els.container.innerHTML = `<div class="gantt-day"><div class="gantt-day-inner" style="min-width:${Math.max(900, days.length * 260)}px">
+  els.container.innerHTML = `<div class="gantt-day"><div class="gantt-day-inner" style="min-width:${Math.max(960, days.length * 480)}px">
     <div class="gantt-timeline-header">${dayBlocks}</div>
     ${rows}
   </div></div>`;
