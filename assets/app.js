@@ -16,6 +16,7 @@ const els = {
   tipoOrden: document.getElementById('tipoOrden'),
   estado: document.getElementById('estado'),
   tecnico: document.getElementById('tecnico'),
+  atencion: document.getElementById('atencion'),
   fecha: document.getElementById('fecha'),
   semanaMultiSelect: document.getElementById('semanaMultiSelect'),
   semanaBtn: document.getElementById('semanaBtn'),
@@ -95,8 +96,10 @@ function applyFilters() {
   const estado = els.estado.value;
   const tecnico = els.tecnico.value;
   const fecha = els.fecha.value ? isoToDDMMYYYY(els.fecha.value) : '';
+  const atencion = els.atencion.value;
 
   state.filtered = state.orders.filter((o) => {
+    if (atencion && o.Atencion !== atencion) return false;
     if (maquina && o.DescripcionMaquina !== maquina) return false;
     if (planta && o.Planta !== planta) return false;
     if (tipo && o.Tipo !== tipo) return false;
@@ -122,17 +125,10 @@ const ESTADO_CLASSES = {
   'Reprogramado': 'status-reprogramado',
 };
 
-const ALERT_KEYWORDS = [
-  'URGENTE', 'RIESGO', 'FALLA', 'FALLO', 'AVERIA', 'AVERÍA', 'NO FUNCIONA',
-  'NO SE PUDO', 'NO SE LOGRO', 'NO SE LOGRÓ', 'DAÑ', 'PARO', 'REQUIERE',
-  'PENDIENTE', 'PROBLEMA', 'FUGA', 'DETENID', 'CUIDADO', 'RECURRENTE',
-  'PLANIFICAR', 'COORDINAR', 'PROGRAMAR',
-];
-
-function hasAlert(comentario) {
-  const upper = comentario.toUpperCase();
-  return ALERT_KEYWORDS.some((k) => upper.includes(k));
-}
+const ATENCION_TITULOS = {
+  Urgente: 'Requiere atención urgente',
+  Seguimiento: 'Requiere seguimiento o acción pendiente',
+};
 
 function render() {
   const total = state.filtered.length;
@@ -144,10 +140,10 @@ function render() {
   els.tbody.innerHTML = pageRows.map((o) => {
     const estadoClass = ESTADO_CLASSES[o.Estado] || '';
     const comentario = (o.ComentarioCierre || '').trim();
-    const commentFlag = comentario && hasAlert(comentario) ? `<span class="comment-flag" title="${comentario}">!</span>` : '';
+    const commentFlag = o.Atencion ? `<span class="comment-flag ${o.Atencion.toLowerCase()}" title="${ATENCION_TITULOS[o.Atencion]}">!</span>` : '';
     return `
     <tr>
-      <td>${o.NoOrden}${commentFlag}</td>
+      <td>${o.NoOrden}</td>
       <td>${o.Tipo}</td>
       <td>${o.OrdenType}</td>
       <td>${o.Planta}</td>
@@ -161,7 +157,7 @@ function render() {
       <td>${o.Semana}</td>
       <td><span class="status-badge ${estadoClass}">${o.Estado}</span></td>
       <td class="col-num">${o.HorasHombre.toLocaleString('es', { maximumFractionDigits: 2 })}</td>
-      <td class="col-comment">${comentario ? `<div class="comment-text" title="${comentario}">${comentario}</div>` : ''}</td>
+      <td class="col-comment">${comentario ? `<div class="comment-wrap">${commentFlag}<div class="comment-text" title="${comentario}">${comentario}</div></div>` : ''}</td>
     </tr>
   `;
   }).join('');
@@ -192,6 +188,7 @@ async function init() {
       const clean = {};
       Object.entries(o).forEach(([k, v]) => { clean[k] = escapeHtml(v); });
       clean.HorasHombre = horasHombre(o);
+      clean.Atencion = nivelAtencion(o.ComentarioCierre);
       return clean;
     });
     state.filtered = state.orders;
@@ -204,7 +201,7 @@ async function init() {
   }
 }
 
-[els.q, els.maquina, els.planta, els.tipo, els.tipoOrden, els.estado, els.tecnico, els.fecha].forEach((el) => {
+[els.q, els.maquina, els.planta, els.tipo, els.tipoOrden, els.estado, els.tecnico, els.atencion, els.fecha].forEach((el) => {
   el.addEventListener('input', applyFilters);
   el.addEventListener('change', applyFilters);
 });
@@ -234,6 +231,7 @@ els.clear.addEventListener('click', () => {
   els.tipoOrden.value = '';
   els.estado.value = '';
   els.tecnico.value = '';
+  els.atencion.value = '';
   els.fecha.value = '';
   state.semanasSeleccionadas.clear();
   els.semanaOptions.querySelectorAll('input[type="checkbox"]').forEach((cb) => { cb.checked = false; });
@@ -254,7 +252,7 @@ const EXPORT_COLUMNS = [
   ['DescripcionMaquina', 'Máquina'], ['Componente', 'Componente'], ['Actividad', 'Actividad'],
   ['Prioridad', 'Prioridad'], ['Tecnico1', 'Técnico 1'], ['Tecnico2', 'Técnico 2'],
   ['FechaPrevista', 'Fecha Prevista'], ['Semana', 'Semana'], ['Estado', 'Estado'],
-  ['HorasHombre', 'Horas-Hombre'], ['ComentarioCierre', 'Comentario de cierre'],
+  ['HorasHombre', 'Horas-Hombre'], ['ComentarioCierre', 'Comentario de cierre'], ['Atencion', 'Atención'],
 ];
 
 function unescapeHtml(str) {

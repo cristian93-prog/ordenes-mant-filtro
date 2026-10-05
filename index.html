@@ -56,6 +56,14 @@
       <select id="tecnico"><option value="">Todos</option></select>
     </div>
     <div class="field">
+      <label for="atencion">Atención (comentario de cierre)</label>
+      <select id="atencion">
+        <option value="">Todas</option>
+        <option value="Urgente">Urgente</option>
+        <option value="Seguimiento">Seguimiento</option>
+      </select>
+    </div>
+    <div class="field">
       <label for="fecha">Fecha Prevista</label>
       <input type="date" id="fecha">
     </div>
@@ -78,6 +86,11 @@
   </section>
 
   <p id="resultCount" class="meta"></p>
+  <p class="meta attn-legend">
+    <span class="comment-flag">!</span> Atención urgente
+    <span class="comment-flag seguimiento">!</span> Requiere seguimiento
+    · según lo que dice el comentario de cierre
+  </p>
 
   <div class="table-wrap">
     <table id="ordersTable">
@@ -111,6 +124,7 @@
   </div>
 </main>
 
+<script src="assets/atencion.js"></script>
 <script src="assets/app.js"></script>
 </body>
 </html>
