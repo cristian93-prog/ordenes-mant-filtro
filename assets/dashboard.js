@@ -1,13 +1,5 @@
 const ANIO_CUMPLIMIENTO = '2026';
 
-const TIPO_COLORS = {
-  'PREVENTIVO': '#3fa564',
-  'CORRECTIVO PLANIFICADO': '#e0a72c',
-  'CORRECTIVO EMERGENTE': '#c3453f',
-  'BASADO': '#5b8def',
-  'PROYECTO': '#8a6de0',
-};
-
 const state = {
   ytdOrders: [],
   weeksYTD: [],
@@ -52,7 +44,6 @@ function build(orders) {
 
   buildKpis(ytdOrders, weeksYTD);
   buildCumplimiento(ytdOrders, weeksYTD);
-  buildTipo(ytdOrders);
   buildSemanaFiltro(weeksYTD);
   buildPlantaTable(ytdOrders);
   buildTecnicosChart(ytdOrders);
@@ -132,22 +123,6 @@ function buildCumplimiento(ytdOrders, weeksYTD) {
   document.getElementById('cumplimientoChart').innerHTML = html;
 }
 
-function buildTipo(ytdOrders) {
-  const total = ytdOrders.length;
-  const counts = {};
-  ytdOrders.forEach((o) => { counts[o.Tipo] = (counts[o.Tipo] || 0) + 1; });
-  const tipos = Object.keys(TIPO_COLORS).filter((t) => counts[t]);
-
-  document.getElementById('tipoBar').innerHTML = tipos.map((t) => {
-    const w = pct(counts[t], total);
-    return `<div class="tipo-seg" style="width:${w}%;background:${TIPO_COLORS[t]}" title="${escapeHtml(t)}: ${counts[t]} (${w}%)"></div>`;
-  }).join('');
-
-  document.getElementById('tipoLegend').innerHTML = tipos.map((t) => `
-    <span><i class="dot" style="background:${TIPO_COLORS[t]};border-color:${TIPO_COLORS[t]}"></i>${escapeHtml(t)} · ${pct(counts[t], total)}%</span>
-  `).join('');
-}
-
 function buildPlantaTable(orders) {
   const map = new Map();
   orders.forEach((o) => {
@@ -172,9 +147,9 @@ function buildPlantaTable(orders) {
     return `<tr>
       <td>${escapeHtml(planta)}</td>
       <td>${list.length}</td>
-      <td class="est-ejecutado">${ejecutadas}</td>
-      <td class="est-en-curso">${enCurso}</td>
-      <td class="est-reprogramado">${reprogramadas}</td>
+      <td class="cell-center"><span class="val-badge est-ejecutado">${ejecutadas}</span></td>
+      <td class="cell-center"><span class="val-badge est-en-curso">${enCurso}</span></td>
+      <td class="cell-center"><span class="val-badge est-reprogramado">${reprogramadas}</span></td>
       <td>${pct(preventivo, list.length)}%</td>
       <td>${pct(horasInterna, totalHorasInterna)}% (${Math.round(horasInterna)} h)</td>
       <td>${pct(horasExterna, totalHorasExterna)}% (${Math.round(horasExterna)} h)</td>
@@ -196,15 +171,17 @@ function buildTecnicosChart(orders) {
     const ejecutadas = list.filter((o) => o.Estado === 'Ejecutado').length;
     const enCurso = list.filter((o) => o.Estado === 'En Curso').length;
     const reprogramadas = list.filter((o) => o.Estado === 'Reprogramado').length;
-    const horasPendientes = list
-      .filter((o) => o.Estado !== 'Ejecutado')
+    const horasEnCurso = list
+      .filter((o) => o.Estado === 'En Curso')
       .reduce((sum, o) => sum + parseHoras(o.HorasProgramadas), 0);
+    const horasEjecutadas = list
+      .filter((o) => o.Estado === 'Ejecutado')
+      .reduce((sum, o) => sum + parseHoras(o.HorasReales), 0);
     return {
-      tecnico, ejecutadas, enCurso, reprogramadas, horasPendientes,
+      tecnico, ejecutadas, enCurso, reprogramadas, horasEnCurso, horasEjecutadas,
       total: list.length,
-      pendientes: enCurso + reprogramadas,
     };
-  }).sort((a, b) => b.pendientes - a.pendientes || b.horasPendientes - a.horasPendientes || b.total - a.total);
+  }).sort((a, b) => b.enCurso - a.enCurso || b.horasEnCurso - a.horasEnCurso || b.total - a.total);
 
   const chart = document.getElementById('tecnicosChart');
   if (rows.length === 0) {
@@ -221,7 +198,10 @@ function buildTecnicosChart(orders) {
       <div class="tec-stack" style="width:${pct(r.total, maxTotal)}%" title="${escapeHtml(detalle)}">
         ${seg(r.ejecutadas, 'est-ejecutado')}${seg(r.enCurso, 'est-en-curso')}${seg(r.reprogramadas, 'est-reprogramado')}
       </div>
-      <span class="tec-open"><strong>${r.pendientes}</strong> pendientes · ${Math.round(r.horasPendientes)} h</span>
+      <div class="tec-stats">
+        <span title="Horas programadas de las órdenes En Curso"><strong>${r.enCurso}</strong> pendientes · ${Math.round(r.horasEnCurso)} h programadas</span>
+        <span title="Horas reales registradas al cerrar las órdenes"><strong>${r.ejecutadas}</strong> ejecutadas · ${Math.round(r.horasEjecutadas)} h reales</span>
+      </div>
     </div>`;
   }).join('');
 }

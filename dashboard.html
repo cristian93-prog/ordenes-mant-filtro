@@ -39,13 +39,6 @@
   </section>
 
   <section class="dash-panel">
-    <h2>Preventivo vs Correctivo</h2>
-    <p class="meta">Año 2026 completo.</p>
-    <div id="tipoBar" class="tipo-bar"></div>
-    <div id="tipoLegend" class="legend"></div>
-  </section>
-
-  <section class="dash-panel">
     <div class="field" style="max-width:260px">
       <label for="semanaFiltro">Filtrar Planta y Técnicos por semana</label>
       <select id="semanaFiltro"><option value="">Todas las semanas (2026)</option></select>
@@ -57,7 +50,7 @@
     <div class="table-wrap">
       <table id="plantaTable">
         <thead>
-          <tr><th>Planta</th><th>Órdenes Trabajo</th><th class="est-ejecutado">Ejecutadas</th><th class="est-en-curso">En Curso</th><th class="est-reprogramado">Reprogramadas</th><th>% Preventivo</th><th>Horas-Hombre (Interna)</th><th>Horas-Hombre (Externa)</th></tr>
+          <tr><th>Planta</th><th>Órdenes Trabajo</th><th class="cell-center">Ejecutadas</th><th class="cell-center">En Curso</th><th class="cell-center">Reprogramadas</th><th>% Preventivo</th><th>Horas-Hombre (Interna)</th><th>Horas-Hombre (Externa)</th></tr>
         </thead>
         <tbody></tbody>
       </table>
@@ -66,7 +59,7 @@
 
   <section class="dash-panel">
     <h2>Órdenes por técnico</h2>
-    <p class="meta">Para el cierre de semana: ordenado por pendientes (En Curso + Reprogramadas) y horas programadas pendientes. Una orden compartida cuenta completa para cada técnico.</p>
+    <p class="meta">Para el cierre de semana. Pendientes = órdenes En Curso, con sus horas programadas; Ejecutadas, con sus horas reales. Las reprogramadas se ven en la barra. Ordenado por pendientes. Una orden compartida cuenta completa para cada técnico.</p>
     <div id="tecnicosChart" class="tec-chart"></div>
     <div class="legend">
       <span><i class="dot dot-ejecutado"></i>Ejecutado</span>

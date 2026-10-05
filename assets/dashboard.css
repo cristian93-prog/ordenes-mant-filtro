@@ -116,24 +116,21 @@
 .dot-en-curso { background: #fdf3c8; border: 1px solid #8a6d00; }
 .dot-reprogramado { background: #fbdada; border: 1px solid #a32626; }
 
-.tipo-bar {
-  display: flex;
-  height: 28px;
-  border-radius: 6px;
-  overflow: hidden;
-}
-
-.tipo-seg {
-  height: 100%;
-}
-
 .est-ejecutado { background: #dcf5e3; color: #1e6b3a; }
 .est-en-curso { background: #fdf3c8; color: #8a6d00; }
 .est-reprogramado { background: #fbdada; color: #a32626; }
 
-td.est-ejecutado, td.est-en-curso, td.est-reprogramado {
+.cell-center {
   text-align: center;
+}
+
+.val-badge {
+  display: inline-block;
+  min-width: 34px;
+  padding: 2px 10px;
+  border-radius: 999px;
   font-weight: 600;
+  text-align: center;
 }
 
 .tec-chart {
@@ -144,7 +141,7 @@ td.est-ejecutado, td.est-en-curso, td.est-reprogramado {
 
 .tec-row {
   display: grid;
-  grid-template-columns: 120px 1fr 190px;
+  grid-template-columns: 120px 1fr 270px;
   align-items: center;
   gap: 12px;
 }
@@ -172,13 +169,16 @@ td.est-ejecutado, td.est-en-curso, td.est-reprogramado {
   overflow: hidden;
 }
 
-.tec-open {
+.tec-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
   font-size: 0.8rem;
   color: var(--muted);
   white-space: nowrap;
 }
 
-.tec-open strong {
+.tec-stats strong {
   color: var(--text);
 }
 
