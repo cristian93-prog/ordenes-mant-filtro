@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Órdenes de Mantenimiento - PNP Plantas</title>
+<link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="assets/dashboard.css">
+<link rel="stylesheet" href="assets/pnp.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+</head>
+<body>
+<header class="header-bar">
+  <div>
+    <h1>PNP Plantas</h1>
+    <p id="meta" class="meta">Cargando datos…</p>
+  </div>
+  <img src="assets/logo.png" alt="La Holandesa" class="logo">
+</header>
+
+<nav class="nav-tabs">
+  <a href="index.html">Listado</a>
+  <a href="gantt.html">Gantt</a>
+  <a href="dashboard.html">Dashboard</a>
+  <a href="pnp.html" class="active">PNP Plantas</a>
+</nav>
+
+<main>
+  <section class="filters">
+    <div class="field"><label for="fAnio">Año</label><select id="fAnio"></select></div>
+    <div class="field"><label for="fMes">Mes</label><select id="fMes"></select></div>
+    <div class="field"><label for="fSemana">N° Semana</label><select id="fSemana"></select></div>
+    <div class="field"><label for="fLinea">Línea Producción</label><select id="fLinea"></select></div>
+    <div class="field"><label for="fTipo">Tipo de PNP</label><select id="fTipo"></select></div>
+    <div class="field"><label for="fMaquina">Máquina</label><select id="fMaquina"></select></div>
+    <div class="field"><label for="fComponente">Componente</label><select id="fComponente"></select></div>
+    <div class="field field-btn">
+      <label class="spacer">&nbsp;</label>
+      <button id="fLimpiar" type="button">Limpiar filtros</button>
+    </div>
+  </section>
+  <p class="meta">Tarjetas: averías internas y externas del año elegido. Gráficos y registro: el Tipo de PNP elegido (por defecto Avería interna). El comparativo muestra el mismo mes o semana del año anterior. Tiempos en horas.</p>
+
+  <div class="kpi-row" id="pnpKpis"></div>
+
+  <div class="pnp-grid">
+    <section class="dash-panel">
+      <h2>TFS vs número de averías (comparativo)</h2>
+      <div class="chart-box"><canvas id="chComparativo"></canvas></div>
+    </section>
+
+    <section class="dash-panel">
+      <h2>Ranking de máquinas por TFS vs nro. de averías</h2>
+      <div class="chart-box"><canvas id="chPareto"></canvas></div>
+    </section>
+
+    <div class="pnp-pair">
+      <section class="dash-panel">
+        <h2>TFS por línea de producción</h2>
+        <div class="chart-box"><canvas id="chLinea"></canvas></div>
+      </section>
+      <section class="dash-panel">
+        <h2>Tipo de avería (%)</h2>
+        <div class="chart-scroll"><div class="chart-box" id="boxTipo"><canvas id="chTipo"></canvas></div></div>
+      </section>
+    </div>
+
+    <section class="dash-panel">
+      <h2>Registro de averías por equipo y componente</h2>
+      <div class="table-wrap registro-wrap">
+        <table id="tablaRegistro">
+          <thead><tr><th>Máquina</th><th>Componente</th><th class="col-num">TFS (h)</th><th class="col-num">Averías</th><th>Mecanismo de falla</th></tr></thead>
+          <tbody></tbody>
+          <tfoot></tfoot>
+        </table>
+      </div>
+    </section>
+  </div>
+</main>
+
+<script src="assets/pnp.js"></script>
+</body>
+</html>

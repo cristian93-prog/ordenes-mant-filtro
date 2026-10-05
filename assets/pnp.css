@@ -1,0 +1,56 @@
+.pnp-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.pnp-grid .dash-panel {
+  margin-bottom: 0;
+  min-width: 0;
+}
+
+.pnp-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  min-width: 0;
+}
+
+.pnp-pair .dash-panel {
+  height: 100%;
+}
+
+.chart-box {
+  position: relative;
+  height: 300px;
+}
+
+.chart-scroll {
+  overflow-x: auto;
+}
+
+.registro-wrap {
+  max-height: 336px;
+  overflow-y: auto;
+}
+
+.registro-wrap th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.registro-wrap tfoot td {
+  position: sticky;
+  bottom: 0;
+  font-weight: 600;
+  background: var(--panel);
+  border-top: 2px solid var(--border);
+}
+
+@media (max-width: 1000px) {
+  .pnp-grid,
+  .pnp-pair {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
