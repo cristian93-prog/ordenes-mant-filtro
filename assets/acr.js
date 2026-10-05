@@ -176,14 +176,14 @@ function abrirFicha(clave) {
     <tr>
       <td>${fechaCorta(e.t)}</td><td>${escapeHtml(e.turno)}</td><td>${escapeHtml(e.tipo)}</td>
       <td>${num1.format(e.horas)}</td><td>${escapeHtml(e.mecanismo)}</td>
-      <td>${escapeHtml(e.descripcion)}</td><td>${escapeHtml(e.acciones)}</td>
+      <td>${escapeHtml(e.descripcion)}</td><td class="ficha-vacio"></td><td>${escapeHtml(e.acciones)}</td>
     </tr>`).join('');
   const hoy = new Date().toLocaleDateString('es');
 
   $('fichaContenido').innerHTML = `
   <div class="ficha">
     <h2>Ficha de análisis de causa raíz (ACR)</h2>
-    <p class="ficha-sub">Datos del historial de paros no planeados. Lo demás se completa con el equipo de trabajo.</p>
+    <p class="ficha-sub">Datos de los paros no planeados del año en curso. Lo demás se completa con el equipo de trabajo.</p>
     <table class="ficha-meta">
       <tr><td>Equipo</td><td>${escapeHtml(p.maquina)}</td></tr>
       <tr><td>Componente</td><td>${escapeHtml(p.componente)}</td></tr>
@@ -199,14 +199,14 @@ function abrirFicha(clave) {
       <div><div class="v">${num1.format(p.tfs / p.n)} h</div><div class="l">MTTR (promedio por avería)</div></div>
       <div><div class="v">${num1.format(p.maximo)} h</div><div class="l">Avería más larga</div></div>
       <div><div class="v">${p.reincidencias}</div><div class="l">Reincidencias ≤ ${DIAS_REINCIDENCIA} días</div></div>
-      <div><div class="v">${averias.length}</div><div class="l">Averías en todo el historial</div></div>
-      <div><div class="v">${mtbfObs === null ? '—' : `${num0.format(mtbfObs)} d`}</div><div class="l">Días promedio entre averías (histórico)</div></div>
+      <div><div class="v">${mtbfObs === null ? '—' : `${num0.format(mtbfObs)} d`}</div><div class="l">Días promedio entre averías (${state.f.anio})</div></div>
     </div>
-    <p class="ficha-sub" style="margin-top:8px">Mecanismo de falla (histórico): ${escapeHtml(mecsTxt)}<br>Distribución por turno (histórico): ${escapeHtml(turnosTxt)}</p>
+    <p class="ficha-sub" style="margin-top:8px">Mecanismo de falla (${state.f.anio}): ${escapeHtml(mecsTxt)}<br>Distribución por turno (${state.f.anio}): ${escapeHtml(turnosTxt)}</p>
 
-    <h3>2. Historial de paros del componente</h3>
+    <h3>2. Paros del componente en ${state.f.anio}</h3>
+    <p class="ficha-sub">El reporte de producción es referencial y no siempre refleja la causa real. Contrastarlo con lo encontrado en campo y anotar el hallazgo de mantenimiento.</p>
     <table class="ficha-tabla">
-      <thead><tr><th>Fecha</th><th>Turno</th><th>Tipo</th><th>Horas</th><th>Mecanismo</th><th>Descripción del paro</th><th>Acciones registradas</th></tr></thead>
+      <thead><tr><th>Fecha</th><th>Turno</th><th>Tipo</th><th>Horas</th><th>Mecanismo</th><th>Reporte de producción (referencial)</th><th>Hallazgo de mantenimiento</th><th>Acciones registradas</th></tr></thead>
       <tbody>${historial}</tbody>
     </table>
 
@@ -270,7 +270,6 @@ function llenarSelect(id, valores, textoTodos) {
 }
 
 function conectar() {
-  $('fAnio').addEventListener('change', () => { state.f.anio = $('fAnio').value; renderTodo(); });
   $('fLinea').addEventListener('change', () => { state.f.linea = $('fLinea').value; renderTodo(); });
   $('fCriterio').addEventListener('change', () => { state.f.criterio = $('fCriterio').value; renderTabla(); });
   $('tablaCandidatos').addEventListener('click', (e) => {
@@ -291,6 +290,9 @@ async function init() {
       const [hh, mm] = hora.split(':').map(Number);
       return { ...e, y, t: new Date(y, m - 1, d, hh, mm) };
     }).sort((a, b) => a.t - b.t);
+    const anioActual = Math.max(...state.eventos.map((e) => e.y));
+    state.f.anio = String(anioActual);
+    state.eventos = state.eventos.filter((e) => e.y === anioActual);
     state.eventos.forEach((e) => {
       const clave = `${e.maquina}||${e.componente}`;
       if (!state.eventosPorPar.has(clave)) state.eventosPorPar.set(clave, []);
@@ -300,11 +302,8 @@ async function init() {
         state.averiasPorPar.get(clave).push(e);
       }
     });
-    const anios = [...new Set(state.eventos.map((e) => e.y))].sort((a, b) => b - a);
-    llenarSelect('fAnio', anios.map(String));
-    state.f.anio = String(anios[0]);
     llenarSelect('fLinea', [...new Set(state.eventos.map((e) => e.linea).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es')), 'Todas');
-    $('meta').textContent = `Basado en ${payload.total} paros no planeados · Datos cargados el ${payload.generado}`;
+    $('meta').textContent = `Solo datos del año ${anioActual}: ${state.eventos.length} paros no planeados · Datos cargados el ${payload.generado}`;
     conectar();
     renderTodo();
   } catch (err) {
