@@ -25,6 +25,8 @@ function Quitar-Acentos([string]$s) {
 
 function Limpiar([string]$s) { (($s -replace '\s+', ' ').Trim()) }
 
+function Recortar([string]$s, [int]$max) { if ($s.Length -gt $max) { $s.Substring(0, $max) + '…' } else { $s } }
+
 function Mecanismo([string]$s) {
   $t = (Quitar-Acentos $s).ToLower()
   if ($t -match 'mecan') { return 'Mecánica' }
@@ -105,6 +107,8 @@ foreach ($t in $table) {
     minutos = [Math]::Round($min, 2)
     horas = [Math]::Round($horas, 4)
     mecanismo = Mecanismo ([string]$t.c[$col['Mecanismo Falla']])
+    descripcion = Recortar (Limpiar ([string]$t.c[$col['Descripción de parada no planeada']])) 500
+    acciones = Recortar (Limpiar ([string]$t.c[$col['Acciones']])) 500
   })
 }
 

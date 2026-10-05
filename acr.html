@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Órdenes de Mantenimiento - Causa raíz</title>
+<link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="assets/dashboard.css">
+<link rel="stylesheet" href="assets/acr.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+</head>
+<body>
+<header class="header-bar no-print-ficha">
+  <div>
+    <h1>Causa raíz de paros no planeados</h1>
+    <p id="meta" class="meta">Cargando datos…</p>
+  </div>
+  <img src="assets/logo.png" alt="La Holandesa" class="logo">
+</header>
+
+<nav class="nav-tabs no-print-ficha">
+  <a href="index.html">Listado</a>
+  <a href="gantt.html">Gantt</a>
+  <a href="dashboard.html">Dashboard</a>
+  <a href="pnp.html">PNP Plantas</a>
+  <a href="acr.html" class="active">Causa raíz</a>
+</nav>
+
+<main>
+  <div id="vistaLista">
+    <section class="filters">
+      <div class="field"><label for="fAnio">Año</label><select id="fAnio"></select></div>
+      <div class="field"><label for="fLinea">Línea Producción</label><select id="fLinea"></select></div>
+      <div class="field">
+        <label for="fCriterio">Mostrar</label>
+        <select id="fCriterio">
+          <option value="">Todos los candidatos</option>
+          <option value="reincidente">Solo reincidentes</option>
+          <option value="aguda">Solo agudas</option>
+        </select>
+      </div>
+    </section>
+    <p class="meta">
+      Un equipo-componente es <strong>candidato a ACR</strong> si tuvo <strong>3 o más averías</strong> en el año o <strong>2 o más reincidencias</strong>
+      (nueva avería del mismo componente en 30 días o menos), o si alguna avería duró <strong>3 horas o más</strong> (aguda). Se ordena por horas de paro (TFS).
+    </p>
+
+    <div class="kpi-row" id="acrKpis"></div>
+
+    <div class="acr-grid">
+      <section class="dash-panel">
+        <h2>Frecuencia vs horas de paro por componente</h2>
+        <p class="meta">Cada punto es un equipo-componente. Arriba a la derecha están los que más paran y más se repiten.</p>
+        <div class="chart-box"><canvas id="chMatriz"></canvas></div>
+      </section>
+      <section class="dash-panel">
+        <h2>Candidatos a análisis de causa raíz</h2>
+        <div class="table-wrap registro-wrap">
+          <table id="tablaCandidatos">
+            <thead>
+              <tr>
+                <th>#</th><th>Equipo</th><th>Componente</th><th class="col-num">Averías</th><th class="col-num">TFS (h)</th>
+                <th class="col-num">Máx. (h)</th><th class="col-num">Reincid.</th><th>Mecanismo</th><th>Tipo</th><th class="col-num">Con acción</th><th></th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <div id="fichaView" hidden>
+    <div class="ficha-botones no-print">
+      <button id="fichaVolver" type="button">← Volver a candidatos</button>
+      <button id="fichaImprimir" type="button">Imprimir / PDF</button>
+    </div>
+    <div id="fichaContenido"></div>
+  </div>
+</main>
+
+<script src="assets/acr.js"></script>
+</body>
+</html>
