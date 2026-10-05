@@ -13,21 +13,24 @@
     <h1>Órdenes de Mantenimiento</h1>
     <p id="meta" class="meta">Cargando datos…</p>
   </div>
-  <img src="assets/logo.png" alt="La Holandesa" class="logo">
+  <div class="header-actions">
+    <button id="printReport" type="button" class="no-print">Imprimir / PDF</button>
+    <img src="assets/logo.png" alt="La Holandesa" class="logo">
+  </div>
 </header>
 
-<nav class="nav-tabs">
+<nav class="nav-tabs no-print">
   <a href="index.html">Listado</a>
   <a href="gantt.html">Gantt</a>
   <a href="dashboard.html" class="active">Dashboard</a>
 </nav>
 
 <main>
-  <p class="meta">Todos los paneles muestran el año 2026 completo (según Fecha Prevista).</p>
+  <p class="meta no-print">Todos los paneles muestran el año 2026 completo (según Fecha Prevista).</p>
 
-  <div class="kpi-row" id="kpiRow"></div>
+  <div class="kpi-row no-print" id="kpiRow"></div>
 
-  <section class="dash-panel">
+  <section class="dash-panel no-print">
     <h2>Cumplimiento por semana</h2>
     <p class="meta">Año 2026, desde la semana 01. Desliza para ver todas las semanas.</p>
     <div id="cumplimientoChart" class="week-chart"></div>
@@ -38,12 +41,22 @@
     </div>
   </section>
 
-  <section class="dash-panel">
+  <section class="dash-panel no-print">
     <div class="field" style="max-width:260px">
-      <label for="semanaFiltro">Filtrar Planta y Técnicos por semana</label>
-      <select id="semanaFiltro"><option value="">Todas las semanas (2026)</option></select>
+      <label for="semanaBtn">Filtrar Planta y Técnicos por semana</label>
+      <div class="multi-select" id="semanaMultiSelect">
+        <button type="button" id="semanaBtn" class="multi-select-btn">Todas las semanas (2026)</button>
+        <div class="multi-select-panel" id="semanaPanel" hidden>
+          <div class="multi-select-actions">
+            <button type="button" id="semanaLimpiar">Limpiar</button>
+          </div>
+          <div id="semanaOptions"></div>
+        </div>
+      </div>
     </div>
   </section>
+
+  <p id="printSemanas" class="print-only meta"></p>
 
   <section class="dash-panel">
     <h2>Planta</h2>

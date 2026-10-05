@@ -67,10 +67,12 @@
   cursor: help;
 }
 
-.week-col .count {
+.week-col .pct-chip {
   font-size: 0.65rem;
-  color: var(--muted);
+  font-weight: 600;
+  padding: 1px 6px;
   margin-bottom: 4px;
+  border-radius: 999px;
   white-space: nowrap;
 }
 
@@ -190,4 +192,104 @@
   .est-ejecutado { background: #1c3326; color: #7fd8a0; }
   .est-en-curso { background: #3a3418; color: #e6c85c; }
   .est-reprogramado { background: #3a2020; color: #e88a8a; }
+}
+
+.total-row td {
+  font-weight: 600;
+  border-top: 2px solid var(--border);
+}
+
+.print-only {
+  display: none;
+}
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 10mm;
+  }
+
+  :root {
+    --bg: #ffffff;
+    --panel: #ffffff;
+    --border: #cfd4da;
+    --text: #1f2430;
+    --muted: #555a64;
+  }
+
+  body {
+    background: #ffffff;
+    color: #1f2430;
+    font-size: 11px;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block;
+  }
+
+  header {
+    padding: 0 0 6px;
+  }
+
+  main {
+    padding: 0;
+  }
+
+  .dash-panel {
+    border: none;
+    padding: 4px 0;
+    margin-bottom: 8px;
+    break-inside: avoid;
+  }
+
+  .table-wrap {
+    overflow: visible;
+  }
+
+  th, td {
+    padding: 3px 6px;
+    font-size: 10px;
+  }
+
+  th {
+    position: static;
+    background: #f0f2f5;
+  }
+
+  .est-ejecutado { background: #dcf5e3; color: #1e6b3a; }
+  .est-en-curso { background: #fdf3c8; color: #8a6d00; }
+  .est-reprogramado { background: #fbdada; color: #a32626; }
+
+  .val-badge {
+    min-width: 28px;
+    padding: 1px 8px;
+  }
+
+  .tec-chart {
+    gap: 4px;
+  }
+
+  .tec-row {
+    grid-template-columns: 90px 1fr 235px;
+    gap: 8px;
+  }
+
+  .tec-stack {
+    height: 16px;
+  }
+
+  .tec-seg {
+    font-size: 9px;
+  }
+
+  .tec-stats {
+    font-size: 9px;
+    gap: 0;
+  }
 }

@@ -3,6 +3,7 @@ const ANIO_CUMPLIMIENTO = '2026';
 const state = {
   ytdOrders: [],
   weeksYTD: [],
+  semanasSeleccionadas: new Set(),
 };
 
 function escapeHtml(str) {
@@ -45,25 +46,54 @@ function build(orders) {
   buildKpis(ytdOrders, weeksYTD);
   buildCumplimiento(ytdOrders, weeksYTD);
   buildSemanaFiltro(weeksYTD);
-  buildPlantaTable(ytdOrders);
-  buildTecnicosChart(ytdOrders);
+  renderFiltered();
+}
+
+function semanasLabel() {
+  const sel = [...state.semanasSeleccionadas].sort();
+  if (sel.length === 0) return `Todas las semanas (${ANIO_CUMPLIMIENTO})`;
+  return sel.length === 1 ? sel[0] : `${sel.length} semanas`;
+}
+
+function renderFiltered() {
+  const sel = state.semanasSeleccionadas;
+  const orders = sel.size > 0 ? state.ytdOrders.filter((o) => sel.has(o.Semana)) : state.ytdOrders;
+  document.getElementById('semanaBtn').textContent = semanasLabel();
+  document.getElementById('printSemanas').textContent = sel.size > 0
+    ? `Semanas: ${[...sel].sort().join(', ')}`
+    : `Semanas: todo el ${ANIO_CUMPLIMIENTO}`;
+  buildPlantaTable(orders);
+  buildTecnicosChart(orders);
 }
 
 function buildSemanaFiltro(weeksYTD) {
-  const select = document.getElementById('semanaFiltro');
-  weeksYTD.slice().reverse().forEach((wk) => {
-    const opt = document.createElement('option');
-    opt.value = wk;
-    opt.textContent = wk;
-    select.appendChild(opt);
+  const options = document.getElementById('semanaOptions');
+  const panel = document.getElementById('semanaPanel');
+  options.innerHTML = weeksYTD.slice().reverse().map((wk) => `
+    <label class="multi-select-option">
+      <input type="checkbox" value="${wk}">
+      <span>${wk}</span>
+    </label>
+  `).join('');
+
+  options.querySelectorAll('input[type="checkbox"]').forEach((cb) => {
+    cb.addEventListener('change', () => {
+      if (cb.checked) state.semanasSeleccionadas.add(cb.value);
+      else state.semanasSeleccionadas.delete(cb.value);
+      renderFiltered();
+    });
   });
-  select.addEventListener('change', () => {
-    const orders = select.value
-      ? state.ytdOrders.filter((o) => o.Semana === select.value)
-      : state.ytdOrders;
-    buildPlantaTable(orders);
-    buildTecnicosChart(orders);
+
+  document.getElementById('semanaBtn').addEventListener('click', () => { panel.hidden = !panel.hidden; });
+  document.addEventListener('click', (e) => {
+    if (!document.getElementById('semanaMultiSelect').contains(e.target)) panel.hidden = true;
   });
+  document.getElementById('semanaLimpiar').addEventListener('click', () => {
+    state.semanasSeleccionadas.clear();
+    options.querySelectorAll('input[type="checkbox"]').forEach((cb) => { cb.checked = false; });
+    renderFiltered();
+  });
+  document.getElementById('printReport').addEventListener('click', () => window.print());
 }
 
 function buildKpis(ytdOrders, weeksYTD) {
@@ -111,7 +141,7 @@ function buildCumplimiento(ytdOrders, weeksYTD) {
     const label = wk.replace(/^\d{4}-W/, 'S');
     const detalle = `Semana ${wk} · ${total} orden(es)\nEjecutado: ${ejecutado} (${pEjec}%)\nEn Curso: ${enCurso} (${pCurso}%)\nReprogramado: ${reprogramado} (${pReprog}%)`;
     return `<div class="week-col" title="${escapeHtml(detalle)}">
-      <span class="count">${total}</span>
+      <span class="pct-chip est-ejecutado">${Math.round(pEjec)}%</span>
       <div class="stack">
         <div class="seg-reprogramado" style="height:${pReprog}%"></div>
         <div class="seg-en-curso" style="height:${pCurso}%"></div>
@@ -155,7 +185,23 @@ function buildPlantaTable(orders) {
       <td>${pct(horasExterna, totalHorasExterna)}% (${Math.round(horasExterna)} h)</td>
     </tr>`;
   }).join('');
-  document.querySelector('#plantaTable tbody').innerHTML = rows;
+
+  const totalOrdenes = orders.length;
+  const totalEjecutadas = orders.filter((o) => o.Estado === 'Ejecutado').length;
+  const totalEnCurso = orders.filter((o) => o.Estado === 'En Curso').length;
+  const totalReprogramadas = orders.filter((o) => o.Estado === 'Reprogramado').length;
+  const totalPreventivo = orders.filter((o) => o.Tipo === 'PREVENTIVO').length;
+  const totalRow = `<tr class="total-row">
+      <td>TOTAL</td>
+      <td>${totalOrdenes}</td>
+      <td class="cell-center"><span class="val-badge est-ejecutado">${totalEjecutadas}</span></td>
+      <td class="cell-center"><span class="val-badge est-en-curso">${totalEnCurso}</span></td>
+      <td class="cell-center"><span class="val-badge est-reprogramado">${totalReprogramadas}</span></td>
+      <td>${pct(totalPreventivo, totalOrdenes)}%</td>
+      <td>${pct(totalHorasInterna, totalHorasInterna)}% (${Math.round(totalHorasInterna)} h)</td>
+      <td>${pct(totalHorasExterna, totalHorasExterna)}% (${Math.round(totalHorasExterna)} h)</td>
+    </tr>`;
+  document.querySelector('#plantaTable tbody').innerHTML = rows + (totalOrdenes > 0 ? totalRow : '');
 }
 
 function buildTecnicosChart(orders) {
