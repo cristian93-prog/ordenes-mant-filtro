@@ -8,22 +8,10 @@ const TIPO_COLORS = {
   'PROYECTO': '#8a6de0',
 };
 
-const ALERT_KEYWORDS = [
-  'URGENTE', 'RIESGO', 'FALLA', 'FALLO', 'AVERIA', 'AVERÍA', 'NO FUNCIONA',
-  'NO SE PUDO', 'NO SE LOGRO', 'NO SE LOGRÓ', 'DAÑ', 'PARO', 'REQUIERE',
-  'PENDIENTE', 'PROBLEMA', 'FUGA', 'DETENID', 'CUIDADO', 'RECURRENTE',
-  'PLANIFICAR', 'COORDINAR', 'PROGRAMAR',
-];
-
 const state = {
   ytdOrders: [],
   weeksYTD: [],
 };
-
-function hasAlert(comentario) {
-  const upper = (comentario || '').toUpperCase();
-  return ALERT_KEYWORDS.some((k) => upper.includes(k));
-}
 
 function escapeHtml(str) {
   return String(str ?? '').replace(/[&<>"']/g, (c) => ({
@@ -67,7 +55,7 @@ function build(orders) {
   buildTipo(ytdOrders);
   buildSemanaFiltro(weeksYTD);
   buildPlantaTable(ytdOrders);
-  buildMaquinasTable(ytdOrders);
+  buildTecnicosChart(ytdOrders);
 }
 
 function buildSemanaFiltro(weeksYTD) {
@@ -83,7 +71,7 @@ function buildSemanaFiltro(weeksYTD) {
       ? state.ytdOrders.filter((o) => o.Semana === select.value)
       : state.ytdOrders;
     buildPlantaTable(orders);
-    buildMaquinasTable(orders);
+    buildTecnicosChart(orders);
   });
 }
 
@@ -178,41 +166,64 @@ function buildPlantaTable(orders) {
 
   const rows = horasPorPlanta.sort((a, b) => b.list.length - a.list.length).map(({ planta, list, horasInterna, horasExterna }) => {
     const preventivo = list.filter((o) => o.Tipo === 'PREVENTIVO').length;
-    const emergente = list.filter((o) => o.Tipo === 'CORRECTIVO EMERGENTE').length;
+    const ejecutadas = list.filter((o) => o.Estado === 'Ejecutado').length;
+    const enCurso = list.filter((o) => o.Estado === 'En Curso').length;
+    const reprogramadas = list.filter((o) => o.Estado === 'Reprogramado').length;
     return `<tr>
       <td>${escapeHtml(planta)}</td>
       <td>${list.length}</td>
+      <td class="est-ejecutado">${ejecutadas}</td>
+      <td class="est-en-curso">${enCurso}</td>
+      <td class="est-reprogramado">${reprogramadas}</td>
       <td>${pct(preventivo, list.length)}%</td>
       <td>${pct(horasInterna, totalHorasInterna)}% (${Math.round(horasInterna)} h)</td>
       <td>${pct(horasExterna, totalHorasExterna)}% (${Math.round(horasExterna)} h)</td>
-      <td>${pct(emergente, list.length)}%</td>
     </tr>`;
   }).join('');
   document.querySelector('#plantaTable tbody').innerHTML = rows;
 }
 
-function buildMaquinasTable(orders) {
+function buildTecnicosChart(orders) {
   const map = new Map();
   orders.forEach((o) => {
-    if (!o.DescripcionMaquina) return;
-    if (!map.has(o.DescripcionMaquina)) map.set(o.DescripcionMaquina, []);
-    map.get(o.DescripcionMaquina).push(o);
+    [o.Tecnico1, o.Tecnico2].filter(Boolean).forEach((tec) => {
+      if (!map.has(tec)) map.set(tec, []);
+      map.get(tec).push(o);
+    });
   });
-  const rows = [...map.entries()].map(([maquina, list]) => {
-    const reprogramadas = list.filter((o) => o.Estado === 'Reprogramado').length;
-    const alertas = list.filter((o) => hasAlert(o.ComentarioCierre)).length;
-    return { maquina, planta: list[0].Planta, total: list.length, reprogramadas, alertas, score: reprogramadas + alertas };
-  }).sort((a, b) => b.score - a.score).slice(0, 10);
 
-  document.querySelector('#maquinasTable tbody').innerHTML = rows.map((r) => `
-    <tr>
-      <td>${escapeHtml(r.maquina)}</td>
-      <td>${escapeHtml(r.planta)}</td>
-      <td>${r.total}</td>
-      <td>${r.reprogramadas}</td>
-      <td>${r.alertas}</td>
-    </tr>
-  `).join('');
+  const rows = [...map.entries()].map(([tecnico, list]) => {
+    const ejecutadas = list.filter((o) => o.Estado === 'Ejecutado').length;
+    const enCurso = list.filter((o) => o.Estado === 'En Curso').length;
+    const reprogramadas = list.filter((o) => o.Estado === 'Reprogramado').length;
+    const horasPendientes = list
+      .filter((o) => o.Estado !== 'Ejecutado')
+      .reduce((sum, o) => sum + parseHoras(o.HorasProgramadas), 0);
+    return {
+      tecnico, ejecutadas, enCurso, reprogramadas, horasPendientes,
+      total: list.length,
+      pendientes: enCurso + reprogramadas,
+    };
+  }).sort((a, b) => b.pendientes - a.pendientes || b.horasPendientes - a.horasPendientes || b.total - a.total);
+
+  const chart = document.getElementById('tecnicosChart');
+  if (rows.length === 0) {
+    chart.innerHTML = '<p class="meta">No hay órdenes para el periodo seleccionado.</p>';
+    return;
+  }
+
+  const maxTotal = Math.max(...rows.map((r) => r.total));
+  chart.innerHTML = rows.map((r) => {
+    const detalle = `${r.tecnico}\nEjecutadas: ${r.ejecutadas}\nEn Curso: ${r.enCurso}\nReprogramadas: ${r.reprogramadas}`;
+    const seg = (n, cls) => (n > 0 ? `<div class="tec-seg ${cls}" style="flex:${n}">${n}</div>` : '');
+    return `<div class="tec-row">
+      <span class="tec-name" title="${escapeHtml(r.tecnico)}">${escapeHtml(r.tecnico)}</span>
+      <div class="tec-stack" style="width:${pct(r.total, maxTotal)}%" title="${escapeHtml(detalle)}">
+        ${seg(r.ejecutadas, 'est-ejecutado')}${seg(r.enCurso, 'est-en-curso')}${seg(r.reprogramadas, 'est-reprogramado')}
+      </div>
+      <span class="tec-open"><strong>${r.pendientes}</strong> pendientes · ${Math.round(r.horasPendientes)} h</span>
+    </div>`;
+  }).join('');
 }
 
 init();

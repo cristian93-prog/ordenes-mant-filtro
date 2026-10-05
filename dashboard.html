@@ -47,7 +47,7 @@
 
   <section class="dash-panel">
     <div class="field" style="max-width:260px">
-      <label for="semanaFiltro">Filtrar Planta y Máquinas por semana</label>
+      <label for="semanaFiltro">Filtrar Planta y Técnicos por semana</label>
       <select id="semanaFiltro"><option value="">Todas las semanas (2026)</option></select>
     </div>
   </section>
@@ -57,7 +57,7 @@
     <div class="table-wrap">
       <table id="plantaTable">
         <thead>
-          <tr><th>Planta</th><th>Órdenes Trabajo</th><th>% Preventivo</th><th>Horas-Hombre (Interna)</th><th>Horas-Hombre (Externa)</th><th>% Correctivo Emergente</th></tr>
+          <tr><th>Planta</th><th>Órdenes Trabajo</th><th class="est-ejecutado">Ejecutadas</th><th class="est-en-curso">En Curso</th><th class="est-reprogramado">Reprogramadas</th><th>% Preventivo</th><th>Horas-Hombre (Interna)</th><th>Horas-Hombre (Externa)</th></tr>
         </thead>
         <tbody></tbody>
       </table>
@@ -65,15 +65,13 @@
   </section>
 
   <section class="dash-panel">
-    <h2>Top 10 máquinas problemáticas</h2>
-    <p class="meta">Ordenado por reprogramaciones + comentarios con alerta.</p>
-    <div class="table-wrap">
-      <table id="maquinasTable">
-        <thead>
-          <tr><th>Máquina</th><th>Planta</th><th>Órdenes</th><th>Reprogramadas</th><th>Con alerta</th></tr>
-        </thead>
-        <tbody></tbody>
-      </table>
+    <h2>Órdenes por técnico</h2>
+    <p class="meta">Para el cierre de semana: ordenado por pendientes (En Curso + Reprogramadas) y horas programadas pendientes. Una orden compartida cuenta completa para cada técnico.</p>
+    <div id="tecnicosChart" class="tec-chart"></div>
+    <div class="legend">
+      <span><i class="dot dot-ejecutado"></i>Ejecutado</span>
+      <span><i class="dot dot-en-curso"></i>En Curso</span>
+      <span><i class="dot dot-reprogramado"></i>Reprogramado</span>
     </div>
   </section>
 </main>
