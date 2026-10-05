@@ -236,6 +236,27 @@ tbody tr:hover {
   white-space: nowrap;
 }
 
+.col-comment {
+  min-width: 220px;
+  max-width: 280px;
+}
+
+.comment-text {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  white-space: pre-line;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.comment-text.expanded {
+  display: block;
+  overflow: visible;
+}
+
 .comment-flag {
   display: inline-flex;
   align-items: center;

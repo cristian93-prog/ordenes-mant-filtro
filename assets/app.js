@@ -161,6 +161,7 @@ function render() {
       <td>${o.Semana}</td>
       <td><span class="status-badge ${estadoClass}">${o.Estado}</span></td>
       <td class="col-num">${o.HorasHombre.toLocaleString('es', { maximumFractionDigits: 2 })}</td>
+      <td class="col-comment">${comentario ? `<div class="comment-text" title="${comentario}">${comentario}</div>` : ''}</td>
     </tr>
   `;
   }).join('');
@@ -240,6 +241,11 @@ els.clear.addEventListener('click', () => {
   applyFilters();
 });
 
+els.tbody.addEventListener('click', (e) => {
+  const comment = e.target.closest('.comment-text');
+  if (comment) comment.classList.toggle('expanded');
+});
+
 els.prev.addEventListener('click', () => { state.page -= 1; render(); });
 els.next.addEventListener('click', () => { state.page += 1; render(); });
 
@@ -248,13 +254,20 @@ const EXPORT_COLUMNS = [
   ['DescripcionMaquina', 'Máquina'], ['Componente', 'Componente'], ['Actividad', 'Actividad'],
   ['Prioridad', 'Prioridad'], ['Tecnico1', 'Técnico 1'], ['Tecnico2', 'Técnico 2'],
   ['FechaPrevista', 'Fecha Prevista'], ['Semana', 'Semana'], ['Estado', 'Estado'],
-  ['HorasHombre', 'Horas-Hombre'],
+  ['HorasHombre', 'Horas-Hombre'], ['ComentarioCierre', 'Comentario de cierre'],
 ];
+
+function unescapeHtml(str) {
+  return str.replace(/&(amp|lt|gt|quot|#39);/g, (_, e) => ({ amp: '&', lt: '<', gt: '>', quot: '"', '#39': "'" }[e]));
+}
 
 els.exportExcel.addEventListener('click', () => {
   const rows = state.filtered.map((o) => {
     const row = {};
-    EXPORT_COLUMNS.forEach(([key, label]) => { row[label] = o[key]; });
+    EXPORT_COLUMNS.forEach(([key, label]) => {
+      const v = o[key];
+      row[label] = typeof v === 'string' ? unescapeHtml(v) : v;
+    });
     return row;
   });
   const sheet = XLSX.utils.json_to_sheet(rows);
