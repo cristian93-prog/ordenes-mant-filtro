@@ -160,6 +160,7 @@ function render() {
       <td>${o.FechaPrevista}</td>
       <td>${o.Semana}</td>
       <td><span class="status-badge ${estadoClass}">${o.Estado}</span></td>
+      <td class="col-num">${o.HorasHombre.toLocaleString('es', { maximumFractionDigits: 2 })}</td>
     </tr>
   `;
   }).join('');
@@ -168,6 +169,12 @@ function render() {
   els.pageInfo.textContent = `Página ${state.page} de ${totalPages}`;
   els.prev.disabled = state.page <= 1;
   els.next.disabled = state.page >= totalPages;
+}
+
+function horasHombre(o) {
+  const campo = o.Estado === 'En Curso' ? o.HorasProgramadas : o.HorasReales;
+  const n = parseFloat(String(campo || '').replace(',', '.'));
+  return Number.isFinite(n) ? n : 0;
 }
 
 function escapeHtml(str) {
@@ -183,6 +190,7 @@ async function init() {
     state.orders = payload.orders.map((o) => {
       const clean = {};
       Object.entries(o).forEach(([k, v]) => { clean[k] = escapeHtml(v); });
+      clean.HorasHombre = horasHombre(o);
       return clean;
     });
     state.filtered = state.orders;
@@ -240,6 +248,7 @@ const EXPORT_COLUMNS = [
   ['DescripcionMaquina', 'Máquina'], ['Componente', 'Componente'], ['Actividad', 'Actividad'],
   ['Prioridad', 'Prioridad'], ['Tecnico1', 'Técnico 1'], ['Tecnico2', 'Técnico 2'],
   ['FechaPrevista', 'Fecha Prevista'], ['Semana', 'Semana'], ['Estado', 'Estado'],
+  ['HorasHombre', 'Horas-Hombre'],
 ];
 
 els.exportExcel.addEventListener('click', () => {

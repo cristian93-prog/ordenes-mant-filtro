@@ -231,6 +231,11 @@ tbody tr:hover {
   text-transform: uppercase;
 }
 
+.col-num {
+  text-align: right;
+  white-space: nowrap;
+}
+
 .comment-flag {
   display: inline-flex;
   align-items: center;
