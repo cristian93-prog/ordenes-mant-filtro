@@ -40,9 +40,10 @@
       <button id="fLimpiar" type="button">Limpiar filtros</button>
     </div>
   </section>
-  <p class="meta">Tarjetas: averías internas y externas del año elegido. Gráficos y registro: el Tipo de PNP elegido (por defecto Avería interna). El comparativo muestra el mismo mes o semana del año anterior. Tiempos en horas.</p>
+  <p class="meta">TFS = tiempo fuera de servicio (horas de paro). Tarjetas: averías internas y externas del año elegido. Gráficos y registro: el Tipo de PNP elegido (por defecto Avería interna). El comparativo muestra el mismo mes o semana del año anterior.</p>
 
   <div class="kpi-row" id="pnpKpis"></div>
+  <p class="meta" id="pnpCalidad"></p>
 
   <div class="pnp-grid">
     <section class="dash-panel">
@@ -51,7 +52,13 @@
     </section>
 
     <section class="dash-panel">
-      <h2>Ranking de máquinas por TFS vs nro. de averías</h2>
+      <div class="panel-head">
+        <h2>Ranking de máquinas por TFS vs nro. de averías</h2>
+        <select id="rankOrden" aria-label="Ordenar ranking">
+          <option value="horas">Ordenar por horas de paro</option>
+          <option value="n">Ordenar por número de averías</option>
+        </select>
+      </div>
       <div class="chart-box"><canvas id="chPareto"></canvas></div>
     </section>
 
@@ -75,6 +82,12 @@
           <tfoot></tfoot>
         </table>
       </div>
+    </section>
+
+    <section class="dash-panel pnp-ancho">
+      <h2>Horas de PNP por tipo (todas las causas)</h2>
+      <p class="meta">Las averías son solo una parte del paro no planeado. Este gráfico muestra dónde más se pierde producción, incluyendo causas que no son de mantenimiento (operación, calidad, energía, planificación). No depende del Tipo de PNP elegido arriba.</p>
+      <div class="chart-box"><canvas id="chTipoPNP"></canvas></div>
     </section>
   </div>
 </main>

@@ -147,6 +147,10 @@ function renderKpis() {
   const tfsExt = suma(ext, 'horas');
   const totAverias = int.length + ext.length;
   const mttr = totAverias ? (tfsInt + tfsExt) / totAverias : 0;
+  const totalPNP = suma(filtrar({ anios: [Number(state.f.anio)], tipos: null }), 'horas');
+  const pctAveria = totalPNP ? ((tfsInt + tfsExt) / totalPNP) * 100 : 0;
+  const pct = (parte) => (kp.length ? `${num0.format((parte / kp.length) * 100)}%` : '—');
+  $('pnpCalidad').textContent = `Calidad del registro (averías del año): turno informado en ${pct(kp.filter((e) => e.turno).length)} · mecanismo de falla en ${pct(kp.filter((e) => e.mecanismo).length)} · acciones registradas en ${pct(kp.filter((e) => e.acciones).length)}. Para analizar causas por turno o dar seguimiento a acciones, estos datos deben llenarse.`;
   const tarjetas = [
     ['TFS INT. (h)', num1.format(tfsInt)],
     ['TFS EXT. (h)', num1.format(tfsExt)],
@@ -155,6 +159,7 @@ function renderKpis() {
     ['AVERÍA EXT.', ext.length],
     ['TOT. AVERÍAS', totAverias],
     ['MTTR (h)', num1.format(mttr)],
+    ['% del PNP que es avería', `${num0.format(pctAveria)}%`],
   ];
   $('pnpKpis').innerHTML = tarjetas.map(([label, valor]) => `
     <div class="kpi-card"><p class="label">${label}</p><p class="value">${valor}</p></div>`).join('');
@@ -202,20 +207,23 @@ function renderPareto() {
     g.horas += e.horas; g.n += 1;
     mapa.set(e.maquina, g);
   });
-  const todas = [...mapa.values()].sort((a, b) => b.horas - a.horas);
-  const total = suma(todas, 'horas');
+  const porN = $('rankOrden').value === 'n';
+  const metrica = (g) => (porN ? g.n : g.horas);
+  const todas = [...mapa.values()].sort((a, b) => metrica(b) - metrica(a) || b.horas - a.horas);
+  const total = todas.reduce((s, g) => s + metrica(g), 0);
   let acum = 0;
   const filas = todas.slice(0, TOP_MAQUINAS).map((g) => {
-    acum += g.horas;
-    return { ...g, acum: total ? (acum / total) * 100 : 0 };
+    acum += metrica(g);
+    return { ...g, valor: metrica(g), acum: total ? (acum / total) * 100 : 0 };
   });
-  const colorBarra = (f) => (f.acum - (f.horas / (total || 1)) * 100 <= 80 ? '#e0555a' : f.acum <= 95 ? '#f0c419' : '#4e79a7');
+  const colorBarra = (f) => (f.acum - (f.valor / (total || 1)) * 100 <= 80 ? '#e0555a' : f.acum <= 95 ? '#f0c419' : '#4e79a7');
+  const redondeo = (v) => Math.round(v * 10) / 10;
   dibujar('chPareto', {
     type: 'bar',
     data: {
       labels: filas.map((f) => f.maquina),
       datasets: [
-        { label: 'TFS (h)', data: filas.map((f) => Math.round(f.horas * 10) / 10), backgroundColor: filas.map(colorBarra), yAxisID: 'y', order: 2 },
+        { label: porN ? 'N° de averías' : 'TFS (h)', data: filas.map((f) => redondeo(f.valor)), backgroundColor: filas.map(colorBarra), yAxisID: 'y', order: 2 },
         { type: 'line', label: '% acumulado', data: filas.map((f) => Math.round(f.acum * 10) / 10), borderColor: '#4a4fb3', backgroundColor: '#4a4fb3', pointRadius: 2, yAxisID: 'y1', order: 1 },
       ],
     },
@@ -224,14 +232,46 @@ function renderPareto() {
       maintainAspectRatio: false,
       layout: { padding: { top: 18 } },
       scales: {
-        y: { beginAtZero: true, title: { display: true, text: 'TFS (h)' } },
+        y: { beginAtZero: true, title: { display: true, text: porN ? 'N° de averías' : 'TFS (h)' } },
         y1: { position: 'right', min: 0, max: 100, grid: { drawOnChartArea: false }, ticks: { callback: (v) => `${v}%` } },
         x: { ticks: { maxRotation: 70, minRotation: 55, callback(v) { const t = this.getLabelForValue(v); return t.length > 16 ? `${t.slice(0, 15)}…` : t; } } },
       },
       plugins: {
         legend: { display: false },
-        tooltip: { callbacks: { afterLabel: (c) => (c.datasetIndex === 0 ? `${filas[c.dataIndex].n} avería(s)` : '') } },
-        valorEtiquetas: { formato: (di, v, i) => (di === 0 && v ? `${num0.format(v)}·${filas[i].n}` : '') },
+        tooltip: { callbacks: { afterLabel: (c) => (c.datasetIndex === 0 ? `${filas[c.dataIndex].n} avería(s) · ${num1.format(filas[c.dataIndex].horas)} h` : '') } },
+        valorEtiquetas: { formato: (di, v, i) => (di === 0 && v ? (porN ? `${filas[i].n}·${num0.format(filas[i].horas)}` : `${num0.format(v)}·${filas[i].n}`) : '') },
+      },
+    },
+  });
+}
+
+const TIPO_PNP_COLORS = {
+  'Avería': '#1f3a93', 'Avería Externa': '#5aa9e6', 'Falla Operacional': '#e0555a', 'Perdidas de calidad': '#f28e2b',
+  'Corte de Energía Eléctrica': '#f0c419', 'Falla Planificación': '#8a6de0', 'Innovación y Desarrollo': '#59a14f',
+  'Falla Materia Prima': '#b07aa1', 'Falla Material de Empaque': '#9c755f',
+};
+
+function renderTipoPNP() {
+  const ev = filtrar({ anios: [Number(state.f.anio)], tipos: null });
+  const mapa = new Map();
+  ev.forEach((e) => { const t = e.tipo || '(sin tipo)'; mapa.set(t, (mapa.get(t) || 0) + e.horas); });
+  const filas = [...mapa.entries()].sort((a, b) => b[1] - a[1]);
+  const total = filas.reduce((s, f) => s + f[1], 0);
+  dibujar('chTipoPNP', {
+    type: 'bar',
+    data: {
+      labels: filas.map((f) => f[0]),
+      datasets: [{ label: 'Horas', data: filas.map((f) => Math.round(f[1] * 10) / 10), backgroundColor: filas.map((f) => TIPO_PNP_COLORS[f[0]] || '#9aa3b2') }],
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      layout: { padding: { right: 80 } },
+      scales: { x: { beginAtZero: true, title: { display: true, text: 'Horas de paro' } } },
+      plugins: {
+        legend: { display: false },
+        valorEtiquetas: { modo: 'derecha', formato: (di, v) => `${num1.format(v)} h (${num0.format(total ? (v / total) * 100 : 0)}%)` },
       },
     },
   });
@@ -324,9 +364,11 @@ function renderTodo() {
   renderLinea();
   renderTipo();
   renderRegistro();
+  renderTipoPNP();
 }
 
 function conectarFiltros() {
+  $('rankOrden').addEventListener('change', renderPareto);
   const mapa = { fAnio: 'anio', fMes: 'mes', fSemana: 'semana', fLinea: 'linea', fTipo: 'tipo', fMaquina: 'maquina', fComponente: 'componente' };
   Object.entries(mapa).forEach(([id, clave]) => {
     $(id).addEventListener('change', () => {
