@@ -138,10 +138,27 @@ main {
 
 .multi-select-actions {
   display: flex;
+  align-items: center;
   justify-content: flex-end;
   margin-bottom: 6px;
   padding-bottom: 6px;
   border-bottom: 1px solid var(--border);
+}
+
+.multi-select-buscar {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin-right: 8px;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.8rem;
+}
+
+.multi-select-vacio {
+  margin: 6px 4px;
+  font-size: 0.8rem;
+  color: var(--muted);
 }
 
 .multi-select-actions button {

@@ -115,3 +115,137 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 8mm;
+  }
+
+  body {
+    font-size: 10px;
+  }
+
+  header {
+    padding: 0 0 4px;
+  }
+
+  h1 {
+    font-size: 1.1rem;
+    margin: 0;
+  }
+
+  .logo {
+    height: 30px;
+  }
+
+  main {
+    padding: 0;
+  }
+
+  .kpi-row {
+    flex-wrap: nowrap;
+    gap: 6px;
+    margin-bottom: 6px;
+  }
+
+  .kpi-card {
+    flex: 1 1 0;
+    padding: 4px 8px;
+  }
+
+  .kpi-card .label {
+    font-size: 8px;
+    margin: 0 0 2px;
+  }
+
+  .kpi-card .value {
+    font-size: 1rem;
+  }
+
+  .seleccion {
+    margin-bottom: 4px;
+  }
+
+  .chip-sel button {
+    display: none;
+  }
+
+  .pnp-grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .pnp-grid > .dash-panel:nth-child(1),
+  .pnp-grid > .dash-panel:nth-child(2) {
+    grid-column: span 3;
+  }
+
+  .pnp-pair {
+    display: contents;
+  }
+
+  .pnp-pair .dash-panel,
+  .pnp-grid > .pnp-ancho {
+    grid-column: span 2;
+    height: auto;
+  }
+
+  .pnp-grid > .pnp-ancho {
+    order: 4;
+  }
+
+  .pnp-grid > .dash-panel:nth-child(4) {
+    grid-column: 1 / -1;
+    order: 5;
+  }
+
+  .dash-panel {
+    padding: 2px 0;
+    margin-bottom: 0;
+  }
+
+  .dash-panel h2 {
+    font-size: 11px;
+    margin: 0 0 3px;
+  }
+
+  .panel-head {
+    margin-bottom: 3px;
+  }
+
+  .panel-head select {
+    display: none;
+  }
+
+  .chart-box {
+    height: 185px;
+    min-width: 0 !important;
+  }
+
+  .pnp-pair .chart-box,
+  .pnp-ancho .chart-box {
+    height: 150px;
+  }
+
+  .chart-scroll {
+    overflow: visible;
+  }
+
+  .registro-wrap {
+    max-height: none;
+    overflow: visible;
+  }
+
+  #tablaRegistro tbody tr:nth-child(n + 7) {
+    display: none;
+  }
+
+  .registro-wrap th {
+    position: static;
+  }
+
+  .registro-wrap tfoot td {
+    position: static;
+  }
+}

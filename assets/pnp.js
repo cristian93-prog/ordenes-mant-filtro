@@ -30,10 +30,23 @@ const multis = [];
 
 function crearMulti(id, textoTodos, alCambiar) {
   const raiz = $(id);
-  raiz.innerHTML = '<button type="button" class="multi-select-btn"></button><div class="multi-select-panel" hidden><div class="multi-select-actions"><button type="button" data-limpiar>Limpiar</button></div><div data-opciones></div></div>';
+  raiz.innerHTML = '<button type="button" class="multi-select-btn"></button><div class="multi-select-panel" hidden><div class="multi-select-actions"><input type="search" class="multi-select-buscar" placeholder="Buscar…" aria-label="Buscar en la lista" autocomplete="off" data-buscar><button type="button" data-limpiar>Limpiar</button></div><div data-opciones></div><p class="multi-select-vacio" hidden>Sin coincidencias</p></div>';
   const btn = raiz.querySelector('.multi-select-btn');
   const panel = raiz.querySelector('.multi-select-panel');
   const cont = raiz.querySelector('[data-opciones]');
+  const buscar = raiz.querySelector('[data-buscar]');
+  const vacio = raiz.querySelector('.multi-select-vacio');
+  const sinAcentos = (t) => String(t).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  const aplicarBusqueda = () => {
+    const q = sinAcentos(buscar.value.trim());
+    let visibles = 0;
+    cont.querySelectorAll('.multi-select-option').forEach((lab) => {
+      const ok = !q || sinAcentos(lab.textContent).includes(q);
+      lab.style.display = ok ? '' : 'none';
+      if (ok) visibles += 1;
+    });
+    vacio.hidden = visibles > 0;
+  };
   const m = { raiz, sel: new Set(), opciones: [] };
   const etiqueta = () => {
     const n = m.sel.size;
@@ -43,7 +56,9 @@ function crearMulti(id, textoTodos, alCambiar) {
   m.pintar = () => {
     cont.innerHTML = m.opciones.map((o) => `<label class="multi-select-option"><input type="checkbox" value="${escapeHtml(o.valor)}"${m.sel.has(o.valor) ? ' checked' : ''}><span>${escapeHtml(o.texto)}</span></label>`).join('');
     etiqueta();
+    aplicarBusqueda();
   };
+  buscar.addEventListener('input', aplicarBusqueda);
   m.poner = (opciones) => {
     m.opciones = opciones;
     m.sel = new Set([...m.sel].filter((v) => opciones.some((o) => o.valor === v)));
@@ -53,6 +68,7 @@ function crearMulti(id, textoTodos, alCambiar) {
   btn.addEventListener('click', () => {
     multis.forEach((x) => { if (x !== m) x.raiz.querySelector('.multi-select-panel').hidden = true; });
     panel.hidden = !panel.hidden;
+    if (!panel.hidden) { buscar.value = ''; aplicarBusqueda(); buscar.focus(); }
   });
   raiz.querySelector('[data-limpiar]').addEventListener('click', () => { m.sel.clear(); m.pintar(); alCambiar(); });
   cont.addEventListener('change', (e) => {
@@ -208,8 +224,6 @@ function renderKpis() {
   const mttr = totAverias ? (tfsInt + tfsExt) / totAverias : 0;
   const totalPNP = suma(filtrar({ anios: [Number(state.f.anio)], tipos: null }), 'horas');
   const pctAveria = totalPNP ? ((tfsInt + tfsExt) / totalPNP) * 100 : 0;
-  const pct = (parte) => (kp.length ? `${num0.format((parte / kp.length) * 100)}%` : '—');
-  $('pnpCalidad').textContent = `Calidad del registro (averías del año): turno informado en ${pct(kp.filter((e) => e.turno).length)} · mecanismo de falla en ${pct(kp.filter((e) => e.mecanismo).length)} · acciones registradas en ${pct(kp.filter((e) => e.acciones).length)}. Para analizar causas por turno o dar seguimiento a acciones, estos datos deben llenarse.`;
   const tarjetas = [
     ['TFS INT. (h)', num1.format(tfsInt)],
     ['TFS EXT. (h)', num1.format(tfsExt)],
@@ -231,9 +245,6 @@ function renderComparativo() {
   const ev = filtrar({ anios: [anio, anio - 1], tipos: tiposElegidos(), ignorarPeriodo: true });
   // La meta (22 h / 5,5 h) es de toda la planta: solo se compara contra ella cuando no hay recorte por línea, máquina o componente.
   const alcanceTotal = !state.sel.maquina && !state.m.maquina.sel.size && !state.m.componente.sel.size && !state.m.linea.sel.size;
-  $('compNota').textContent = alcanceTotal
-    ? 'Haz clic en una barra para filtrar el resto de la página por ese mes o semana; vuelve a hacer clic para quitarla.'
-    : 'Vista recortada por máquina, componente o línea: se muestra sin la meta (la meta de 22 h / 5,5 h es de toda la planta). Haz clic en una barra para filtrar por ese mes o semana.';
   const clave = (e) => (porSemana ? e.w : e.m);
   const horasPrev = {};
   const horasAct = {};
@@ -502,7 +513,25 @@ function renderSeleccion() {
     : '';
 }
 
+function renderResumenImpresion() {
+  const partes = [`Año ${state.f.anio}`];
+  const etiquetaDe = (clave, titulo) => {
+    const f = state.m[clave];
+    if (!f.sel.size) return;
+    const textos = f.opciones.filter((o) => f.sel.has(o.valor)).map((o) => o.texto);
+    partes.push(`${titulo}: ${textos.join(', ')}`);
+  };
+  etiquetaDe('mes', 'Mes');
+  etiquetaDe('semana', 'Semana');
+  etiquetaDe('linea', 'Línea');
+  etiquetaDe('tipo', 'Tipo de PNP');
+  etiquetaDe('maquina', 'Máquina');
+  etiquetaDe('componente', 'Componente');
+  $('printResumen').textContent = partes.join(' · ');
+}
+
 function renderTodo() {
+  renderResumenImpresion();
   renderSeleccion();
   renderKpis();
   renderComparativo();
@@ -514,6 +543,10 @@ function renderTodo() {
 }
 
 function conectarFiltros() {
+  $('printReport').addEventListener('click', () => window.print());
+  const reajustar = () => Object.values(state.charts).forEach((c) => c.resize());
+  window.addEventListener('beforeprint', reajustar);
+  window.addEventListener('afterprint', reajustar);
   $('rankOrden').addEventListener('change', renderPareto);
   $('compVista').addEventListener('change', () => {
     state.vista = $('compVista').value;

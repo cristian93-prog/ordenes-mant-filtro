@@ -14,11 +14,15 @@
   <div>
     <h1>PNP Plantas</h1>
     <p id="meta" class="meta">Cargando datos…</p>
+    <p id="printResumen" class="print-only meta"></p>
   </div>
-  <img src="assets/logo.png" alt="La Holandesa" class="logo">
+  <div class="header-actions">
+    <button id="printReport" type="button" class="no-print">Imprimir / PDF</button>
+    <img src="assets/logo.png" alt="La Holandesa" class="logo">
+  </div>
 </header>
 
-<nav class="nav-tabs">
+<nav class="nav-tabs no-print">
   <a href="index.html">Listado</a>
   <a href="gantt.html">Gantt</a>
   <a href="dashboard.html">Dashboard</a>
@@ -27,7 +31,7 @@
 </nav>
 
 <main>
-  <section class="filters">
+  <section class="filters no-print">
     <div class="field"><label for="fAnio">Año</label><select id="fAnio"></select></div>
     <div class="field"><label>Mes</label><div class="multi-select" id="mMes"></div></div>
     <div class="field"><label>N° Semana</label><div class="multi-select" id="mSemana"></div></div>
@@ -40,12 +44,10 @@
       <button id="fLimpiar" type="button">Limpiar filtros</button>
     </div>
   </section>
-  <p class="meta">TFS = tiempo fuera de servicio (horas de paro). Tarjetas: averías internas y externas del año elegido. Gráficos y registro: el Tipo de PNP elegido (por defecto Avería interna). El comparativo muestra el mismo mes o semana del año anterior.</p>
 
   <div class="seleccion" id="pnpSeleccion" hidden></div>
 
   <div class="kpi-row" id="pnpKpis"></div>
-  <p class="meta" id="pnpCalidad"></p>
 
   <div class="pnp-grid">
     <section class="dash-panel">
@@ -57,7 +59,6 @@
         </select>
       </div>
       <div class="chart-scroll"><div class="chart-box" id="boxComparativo"><canvas id="chComparativo"></canvas></div></div>
-      <p class="meta" id="compNota"></p>
     </section>
 
     <section class="dash-panel">
@@ -69,7 +70,6 @@
         </select>
       </div>
       <div class="chart-box"><canvas id="chPareto"></canvas></div>
-      <p class="meta">Haz clic en una barra para filtrar las tarjetas y los gráficos de abajo por esa máquina.</p>
     </section>
 
     <div class="pnp-pair">
@@ -85,7 +85,6 @@
 
     <section class="dash-panel">
       <h2>Registro de averías por equipo y componente</h2>
-      <p class="meta">Haz clic en el encabezado de una columna para ordenar (otro clic invierte el orden).</p>
       <div class="table-wrap registro-wrap">
         <table id="tablaRegistro">
           <thead><tr><th data-orden="maquina" data-etiqueta="Máquina">Máquina</th><th data-orden="componente" data-etiqueta="Componente">Componente</th><th class="col-num" data-orden="horas" data-etiqueta="TFS (h)">TFS (h)</th><th class="col-num" data-orden="n" data-etiqueta="Averías">Averías</th><th data-orden="mecanismo" data-etiqueta="Mecanismo de falla">Mecanismo de falla</th></tr></thead>
@@ -97,7 +96,6 @@
 
     <section class="dash-panel pnp-ancho">
       <h2>Horas de PNP por tipo (todas las causas)</h2>
-      <p class="meta">Las averías son solo una parte del paro no planeado. Este gráfico muestra dónde más se pierde producción, incluyendo causas que no son de mantenimiento (operación, calidad, energía, planificación). No depende del Tipo de PNP elegido arriba.</p>
       <div class="chart-box"><canvas id="chTipoPNP"></canvas></div>
     </section>
   </div>
