@@ -232,6 +232,10 @@
     overflow: visible;
   }
 
+  .chart-box {
+    overflow: hidden;
+  }
+
   .registro-wrap {
     max-height: none;
     overflow: visible;

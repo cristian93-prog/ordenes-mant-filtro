@@ -544,9 +544,35 @@ function renderTodo() {
 
 function conectarFiltros() {
   $('printReport').addEventListener('click', () => window.print());
+  // Al imprimir, los gráficos conservan el tamaño de pantalla y se desbordan. Se aplican las reglas de impresión
+  // como estilo normal justo antes de imprimir y se redimensionan los gráficos con el diseño de impresión ya aplicado.
   const reajustar = () => Object.values(state.charts).forEach((c) => c.resize());
-  window.addEventListener('beforeprint', reajustar);
-  window.addEventListener('afterprint', reajustar);
+  let estiloImpresion = null;
+  const reglasImpresion = () => {
+    let css = '';
+    [...document.styleSheets].forEach((hoja) => {
+      let reglas = [];
+      try { reglas = [...hoja.cssRules]; } catch (_e) { return; }
+      reglas.forEach((r) => {
+        if (r.type === CSSRule.MEDIA_RULE && /print/.test(r.conditionText || r.media.mediaText)) {
+          [...r.cssRules].forEach((x) => { if (x.type !== CSSRule.PAGE_RULE) css += `${x.cssText}\n`; });
+        }
+      });
+    });
+    return css;
+  };
+  window.addEventListener('beforeprint', () => {
+    if (!estiloImpresion) {
+      estiloImpresion = document.createElement('style');
+      estiloImpresion.textContent = reglasImpresion();
+      document.head.appendChild(estiloImpresion);
+    }
+    reajustar();
+  });
+  window.addEventListener('afterprint', () => {
+    if (estiloImpresion) { estiloImpresion.remove(); estiloImpresion = null; }
+    reajustar();
+  });
   $('rankOrden').addEventListener('change', renderPareto);
   $('compVista').addEventListener('change', () => {
     state.vista = $('compVista').value;
