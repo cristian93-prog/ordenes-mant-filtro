@@ -296,8 +296,9 @@ function renderComparativo() {
           labels: {
             generateLabels(chart) {
               const labels = Chart.defaults.plugins.legend.labels.generateLabels(chart);
-              if (labels[1] && alcanceTotal) { labels[1].fillStyle = COLOR_DENTRO_META; labels[1].strokeStyle = COLOR_DENTRO_META; labels[1].text = `TFS ${anio} (verde: dentro de meta, rojo: sobre meta)`; }
-              return alcanceTotal ? labels : labels.filter((_l, i) => i !== 3);
+              const barra = labels.find((l) => l.datasetIndex === 1);
+              if (barra && alcanceTotal) barra.text = `TFS ${anio} (verde: dentro de meta, rojo: sobre meta)`;
+              return alcanceTotal ? labels : labels.filter((l) => l.datasetIndex !== 3);
             },
           },
         },
@@ -400,7 +401,7 @@ function renderTipoPNP() {
       scales: { x: { beginAtZero: true, title: { display: true, text: 'Horas de paro' } } },
       plugins: {
         legend: { display: false },
-        valorEtiquetas: { modo: 'derecha', formato: (di, v) => `${num1.format(v)} h (${num0.format(total ? (v / total) * 100 : 0)}%)` },
+        valorEtiquetas: { modo: 'derecha', formato: (di, v, i) => `${num1.format(v)} h (${num0.format(total ? (filas[i][1] / total) * 100 : 0)}%)` },
       },
     },
   });
