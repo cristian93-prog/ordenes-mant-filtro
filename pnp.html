@@ -42,13 +42,22 @@
   </section>
   <p class="meta">TFS = tiempo fuera de servicio (horas de paro). Tarjetas: averías internas y externas del año elegido. Gráficos y registro: el Tipo de PNP elegido (por defecto Avería interna). El comparativo muestra el mismo mes o semana del año anterior.</p>
 
+  <div class="seleccion" id="pnpSeleccion" hidden></div>
+
   <div class="kpi-row" id="pnpKpis"></div>
   <p class="meta" id="pnpCalidad"></p>
 
   <div class="pnp-grid">
     <section class="dash-panel">
-      <h2>TFS vs número de averías (comparativo)</h2>
-      <div class="chart-box"><canvas id="chComparativo"></canvas></div>
+      <div class="panel-head">
+        <h2>TFS vs número de averías (comparativo)</h2>
+        <select id="compVista" aria-label="Vista del comparativo">
+          <option value="mes">Ver por mes (meta 22 h)</option>
+          <option value="semana">Ver por semana (meta 5,5 h)</option>
+        </select>
+      </div>
+      <div class="chart-scroll"><div class="chart-box" id="boxComparativo"><canvas id="chComparativo"></canvas></div></div>
+      <p class="meta">Haz clic en una barra para filtrar el resto de la página por ese mes o semana.</p>
     </section>
 
     <section class="dash-panel">
@@ -60,6 +69,7 @@
         </select>
       </div>
       <div class="chart-box"><canvas id="chPareto"></canvas></div>
+      <p class="meta">Haz clic en una barra para filtrar las tarjetas y los gráficos de abajo por esa máquina.</p>
     </section>
 
     <div class="pnp-pair">

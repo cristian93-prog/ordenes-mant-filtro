@@ -7,15 +7,27 @@ const LINEA_COLORS = {
 };
 const TIPOS_AVERIA = ['Avería', 'Avería Externa'];
 const TOP_MAQUINAS = 20;
+const META_MENSUAL = 22;
+const META_SEMANAL = 5.5;
+const COLOR_DENTRO_META = '#2e9e5b';
+const COLOR_SOBRE_META = '#e0555a';
 
 const num1 = new Intl.NumberFormat('es', { maximumFractionDigits: 1 });
 const num0 = new Intl.NumberFormat('es', { maximumFractionDigits: 0 });
+const fmtH = (v) => (v >= 10 ? num0.format(v) : num1.format(v));
 
 const state = {
   eventos: [],
   charts: {},
   f: { anio: '', mes: '', semana: '', linea: '', tipo: 'Avería', maquina: '', componente: '' },
+  sel: { maquina: '', periodo: null },
+  vista: 'mes',
 };
+
+function conAlpha(hex, alpha) {
+  const n = parseInt(hex.slice(1), 16);
+  return `rgba(${n >> 16}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`;
+}
 
 const $ = (id) => document.getElementById(id);
 
@@ -37,11 +49,14 @@ function suma(lista, campo) {
   return lista.reduce((s, e) => s + e[campo], 0);
 }
 
-function filtrar({ anios, tipos }) {
+function filtrar({ anios, tipos, ignorarMaquina = false, ignorarPeriodo = false }) {
   const f = state.f;
+  const s = state.sel;
   return state.eventos.filter((e) =>
     anios.includes(e.y)
     && (!tipos || tipos.includes(e.tipo))
+    && (ignorarMaquina || !s.maquina || e.maquina === s.maquina)
+    && (ignorarPeriodo || !s.periodo || (s.periodo.modo === 'mes' ? e.m === s.periodo.valor : e.w === s.periodo.valor))
     && (!f.mes || e.m === Number(f.mes))
     && (!f.semana || e.w === Number(f.semana))
     && (!f.linea || e.linea === f.linea)
@@ -107,9 +122,12 @@ const etiquetasValores = {
       meta.data.forEach((el, i) => {
         const texto = opts.formato(di, ds.data[i], i);
         if (!texto) return;
-        const modo = opts.modo || 'arriba';
+        const modo = (typeof opts.modo === 'function' ? opts.modo(di) : opts.modo) || 'arriba';
         ctx.fillStyle = (opts.color && opts.color(di)) || Chart.defaults.color;
-        if (modo === 'derecha') {
+        if (modo === 'abajo') {
+          ctx.textAlign = 'center';
+          ctx.fillText(texto, el.x, el.y + 12);
+        } else if (modo === 'derecha') {
           ctx.textAlign = 'left';
           ctx.fillText(texto, el.x + 5, el.y);
         } else if (modo === 'centro') {
@@ -167,40 +185,86 @@ function renderKpis() {
 
 function renderComparativo() {
   const anio = Number(state.f.anio);
-  const ev = filtrar({ anios: [anio, anio - 1], tipos: tiposElegidos() });
-  const horasPrev = Array(12).fill(0);
-  const horasAct = Array(12).fill(0);
-  const cuenta = Array(12).fill(0);
+  const porSemana = state.vista === 'semana';
+  const meta = porSemana ? META_SEMANAL : META_MENSUAL;
+  const ev = filtrar({ anios: [anio, anio - 1], tipos: tiposElegidos(), ignorarMaquina: true, ignorarPeriodo: true });
+  const clave = (e) => (porSemana ? e.w : e.m);
+  const horasPrev = {};
+  const horasAct = {};
+  const cuenta = {};
   ev.forEach((e) => {
-    if (e.y === anio) { horasAct[e.m - 1] += e.horas; cuenta[e.m - 1] += 1; } else { horasPrev[e.m - 1] += e.horas; }
+    const k = clave(e);
+    if (e.y === anio) { horasAct[k] = (horasAct[k] || 0) + e.horas; cuenta[k] = (cuenta[k] || 0) + 1; } else { horasPrev[k] = (horasPrev[k] || 0) + e.horas; }
   });
-  const meses = MESES.map((_, i) => i).filter((i) => horasPrev[i] || horasAct[i] || cuenta[i]);
+  const claves = [...new Set([...Object.keys(horasPrev), ...Object.keys(horasAct)].map(Number))].sort((a, b) => a - b);
+  const ultimoConDatos = Math.max(0, ...Object.keys(horasAct).map(Number));
+  const etiqueta = (k) => (porSemana ? `sem${k}` : MESES[k - 1].toLowerCase());
   const redondeo = (v) => Math.round(v * 10) / 10;
+  const hayPeriodo = !!state.sel.periodo && state.sel.periodo.modo === state.vista;
+  const seleccionada = (k) => hayPeriodo && state.sel.periodo.valor === k;
+  const colorAct = (k) => {
+    const base = (horasAct[k] || 0) <= meta ? COLOR_DENTRO_META : COLOR_SOBRE_META;
+    return hayPeriodo && !seleccionada(k) ? conAlpha(base, 0.3) : base;
+  };
+
+  const box = $('boxComparativo');
+  box.style.minWidth = porSemana && claves.length > 14 ? `${claves.length * 40}px` : '';
   dibujar('chComparativo', {
     type: 'bar',
     data: {
-      labels: meses.map((i) => MESES[i].toLowerCase()),
+      labels: claves.map(etiqueta),
       datasets: [
-        { label: `TFS ${anio - 1}`, data: meses.map((i) => redondeo(horasPrev[i])), backgroundColor: '#5aa9e6', order: 2 },
-        { label: `TFS ${anio}`, data: meses.map((i) => redondeo(horasAct[i])), backgroundColor: '#1f3a93', order: 2 },
-        { type: 'line', label: `Averías ${anio}`, data: meses.map((i) => cuenta[i]), borderColor: '#f28e2b', backgroundColor: '#f28e2b', tension: 0.3, order: 1 },
+        { label: `TFS ${anio - 1}`, data: claves.map((k) => (horasPrev[k] ? redondeo(horasPrev[k]) : 0)), backgroundColor: '#5aa9e6', order: 3 },
+        { label: `TFS ${anio}`, data: claves.map((k) => (k <= ultimoConDatos ? redondeo(horasAct[k] || 0) : null)), backgroundColor: claves.map(colorAct), order: 3 },
+        { type: 'line', label: `Averías ${anio}`, data: claves.map((k) => (k <= ultimoConDatos ? (cuenta[k] || 0) : null)), borderColor: '#f28e2b', backgroundColor: '#f28e2b', tension: 0.3, pointRadius: porSemana ? 2 : 4, order: 1 },
+        { type: 'line', label: porSemana ? `Meta semanal (${num1.format(META_SEMANAL)} h)` : `Meta mensual (${META_MENSUAL} h)`, data: claves.map(() => meta), borderColor: '#6b7280', borderDash: [6, 4], borderWidth: 2, pointRadius: 0, order: 2 },
       ],
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
       layout: { padding: { top: 18 } },
+      onHover: (evt, els) => { evt.native.target.style.cursor = els.length ? 'pointer' : 'default'; },
+      onClick: (evt, _els, chart) => {
+        const pts = chart.getElementsAtEventForMode(evt, 'index', { intersect: false }, true);
+        if (!pts.length) return;
+        const k = claves[pts[0].index];
+        state.sel.periodo = seleccionada(k) ? null : { modo: state.vista, valor: k };
+        setTimeout(renderTodo, 0);
+      },
       scales: { y: { beginAtZero: true, title: { display: true, text: 'Horas / N° de averías' } } },
       plugins: {
-        legend: { position: 'bottom' },
-        valorEtiquetas: { formato: (di, v) => (v ? num0.format(v) : '') },
+        legend: {
+          position: 'bottom',
+          labels: {
+            generateLabels(chart) {
+              const labels = Chart.defaults.plugins.legend.labels.generateLabels(chart);
+              if (labels[1]) { labels[1].fillStyle = COLOR_DENTRO_META; labels[1].strokeStyle = COLOR_DENTRO_META; labels[1].text = `TFS ${anio} (verde: dentro de meta, rojo: sobre meta)`; }
+              return labels;
+            },
+          },
+        },
+        tooltip: {
+          callbacks: {
+            afterLabel: (c) => (c.datasetIndex === 1 && c.raw !== null ? (c.raw <= meta ? 'Dentro de la meta' : `Sobre la meta (+${num1.format(c.raw - meta)} h)`) : ''),
+          },
+        },
+        valorEtiquetas: {
+          modo: (di) => (di === 2 ? 'abajo' : 'arriba'),
+          color: (di) => (di === 2 ? '#d9730d' : null),
+          formato: (di, v) => {
+            if (v === null || di === 3) return '';
+            if (porSemana && di !== 1) return '';
+            return v ? fmtH(v) : '';
+          },
+        },
       },
     },
   });
 }
 
 function renderPareto() {
-  const ev = filtrar({ anios: [Number(state.f.anio)], tipos: tiposElegidos() });
+  const ev = filtrar({ anios: [Number(state.f.anio)], tipos: tiposElegidos(), ignorarMaquina: true });
   const mapa = new Map();
   ev.forEach((e) => {
     const g = mapa.get(e.maquina) || { maquina: e.maquina, horas: 0, n: 0 };
@@ -216,7 +280,8 @@ function renderPareto() {
     acum += metrica(g);
     return { ...g, valor: metrica(g), acum: total ? (acum / total) * 100 : 0 };
   });
-  const colorBarra = (f) => (f.acum - (f.valor / (total || 1)) * 100 <= 80 ? '#e0555a' : f.acum <= 95 ? '#f0c419' : '#4e79a7');
+  const colorZona = (f) => (f.acum - (f.valor / (total || 1)) * 100 <= 80 ? '#e0555a' : f.acum <= 95 ? '#f0c419' : '#4e79a7');
+  const colorBarra = (f) => (state.sel.maquina && f.maquina !== state.sel.maquina ? conAlpha(colorZona(f), 0.3) : colorZona(f));
   const redondeo = (v) => Math.round(v * 10) / 10;
   dibujar('chPareto', {
     type: 'bar',
@@ -231,6 +296,13 @@ function renderPareto() {
       responsive: true,
       maintainAspectRatio: false,
       layout: { padding: { top: 18 } },
+      onHover: (evt, els) => { evt.native.target.style.cursor = els.length ? 'pointer' : 'default'; },
+      onClick: (_evt, els) => {
+        if (!els.length) return;
+        const maquina = filas[els[0].index].maquina;
+        state.sel.maquina = state.sel.maquina === maquina ? '' : maquina;
+        setTimeout(renderTodo, 0);
+      },
       scales: {
         y: { beginAtZero: true, title: { display: true, text: porN ? 'N° de averías' : 'TFS (h)' } },
         y1: { position: 'right', min: 0, max: 100, grid: { drawOnChartArea: false }, ticks: { callback: (v) => `${v}%` } },
@@ -239,7 +311,7 @@ function renderPareto() {
       plugins: {
         legend: { display: false },
         tooltip: { callbacks: { afterLabel: (c) => (c.datasetIndex === 0 ? `${filas[c.dataIndex].n} avería(s) · ${num1.format(filas[c.dataIndex].horas)} h` : '') } },
-        valorEtiquetas: { formato: (di, v, i) => (di === 0 && v ? (porN ? `${filas[i].n}·${num0.format(filas[i].horas)}` : `${num0.format(v)}·${filas[i].n}`) : '') },
+        valorEtiquetas: { formato: (di, v, i) => (di === 0 && v ? (porN ? `${filas[i].n}·${fmtH(filas[i].horas)}` : `${fmtH(v)}·${filas[i].n}`) : '') },
       },
     },
   });
@@ -357,7 +429,22 @@ function renderRegistro() {
     <tr><td>Total</td><td></td><td class="col-num">${num1.format(suma(filas, 'horas'))}</td><td class="col-num">${suma(filas, 'n')}</td><td></td></tr>`;
 }
 
+function renderSeleccion() {
+  const chips = [];
+  if (state.sel.maquina) chips.push(['maquina', `Máquina: ${state.sel.maquina}`]);
+  if (state.sel.periodo) {
+    const { modo, valor } = state.sel.periodo;
+    chips.push(['periodo', modo === 'semana' ? `Semana ${valor}` : `Mes: ${MESES[valor - 1]}`]);
+  }
+  const caja = $('pnpSeleccion');
+  caja.hidden = chips.length === 0;
+  caja.innerHTML = chips.length
+    ? `<span class="meta">Selección activa (filtra tarjetas, ranking y gráficos de abajo):</span>${chips.map(([k, t]) => `<span class="chip-sel">${escapeHtml(t)} <button type="button" data-quitar="${k}" aria-label="Quitar selección">✕</button></span>`).join('')}`
+    : '';
+}
+
 function renderTodo() {
+  renderSeleccion();
   renderKpis();
   renderComparativo();
   renderPareto();
@@ -369,11 +456,24 @@ function renderTodo() {
 
 function conectarFiltros() {
   $('rankOrden').addEventListener('change', renderPareto);
+  $('compVista').addEventListener('change', () => {
+    state.vista = $('compVista').value;
+    if (state.sel.periodo && state.sel.periodo.modo !== state.vista) state.sel.periodo = null;
+    renderTodo();
+  });
+  $('pnpSeleccion').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-quitar]');
+    if (!b) return;
+    if (b.dataset.quitar === 'maquina') state.sel.maquina = '';
+    else state.sel.periodo = null;
+    renderTodo();
+  });
   const mapa = { fAnio: 'anio', fMes: 'mes', fSemana: 'semana', fLinea: 'linea', fTipo: 'tipo', fMaquina: 'maquina', fComponente: 'componente' };
   Object.entries(mapa).forEach(([id, clave]) => {
     $(id).addEventListener('change', () => {
       state.f[clave] = $(id).value;
-      if (clave === 'anio') actualizarSemanas();
+      if (clave === 'anio') { actualizarSemanas(); state.sel = { maquina: '', periodo: null }; }
+      if (clave === 'maquina') actualizarComponentes();
       if (clave === 'maquina') actualizarComponentes();
       renderTodo();
     });
@@ -383,6 +483,7 @@ function conectarFiltros() {
     state.f = { anio, mes: '', semana: '', linea: '', tipo: 'Avería', maquina: '', componente: '' };
     ['fMes', 'fSemana', 'fLinea', 'fMaquina'].forEach((id) => { $(id).value = ''; });
     $('fTipo').value = 'Avería';
+    state.sel = { maquina: '', periodo: null };
     actualizarComponentes();
     renderTodo();
   });
