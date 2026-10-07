@@ -564,7 +564,7 @@ function conectarFiltros() {
   window.addEventListener('beforeprint', () => {
     if (!estiloImpresion) {
       estiloImpresion = document.createElement('style');
-      estiloImpresion.textContent = reglasImpresion();
+      estiloImpresion.textContent = reglasImpresion() + '\nbody { width: 281mm; }';
       document.head.appendChild(estiloImpresion);
     }
     reajustar();

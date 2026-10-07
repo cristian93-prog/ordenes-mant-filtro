@@ -236,6 +236,11 @@
     overflow: hidden;
   }
 
+  .chart-box canvas {
+    width: 100% !important;
+    height: 100% !important;
+  }
+
   .registro-wrap {
     max-height: none;
     overflow: visible;
