@@ -88,12 +88,36 @@ foreach ($req in 'ID', 'Hora de inicio', 'Línea', 'Máquina', 'Componente', 'Ti
   if (-not $col.ContainsKey($req)) { throw "No se encontró la columna '$req' en la hoja $Hoja" }
 }
 
+function Leer-Fecha($raw) {
+  $inv = [Globalization.CultureInfo]::InvariantCulture
+  $v = 0.0
+  if ([double]::TryParse([string]$raw, [Globalization.NumberStyles]::Float, $inv, [ref]$v)) { return [DateTime]::FromOADate($v) }
+  $formatos = 'M/d/yy H:mm:ss', 'M/d/yyyy H:mm:ss', 'M/d/yy H:mm', 'M/d/yyyy H:mm', 'yyyy-MM-dd HH:mm:ss', 'yyyy-MM-dd HH:mm'
+  $r = [DateTime]::MinValue
+  if ([DateTime]::TryParseExact(([string]$raw).Trim(), [string[]]$formatos, $inv, [Globalization.DateTimeStyles]::None, [ref]$r)) { return $r }
+  return $null
+}
+
+$avisos = New-Object System.Collections.ArrayList
+$ultimaFecha = $null
 $eventos = New-Object System.Collections.ArrayList
 foreach ($t in $table) {
   if ($t.n -le $hdr.n) { continue }
   $ini = $t.c[$col['Hora de inicio']]
   if (-not $ini) { continue }
-  $fecha = [DateTime]::FromOADate([double]$ini)
+  $fecha = Leer-Fecha $ini
+  if ($null -eq $fecha) { [void]$avisos.Add("Fila $($t.n): fecha ilegible '$ini', se omitió el registro."); continue }
+  # Día y mes invertidos (p. ej. 1 de octubre escrito como 10 de enero): se corrige solo si la fecha salta
+  # más de 20 días hacia atrás respecto al registro anterior y la fecha invertida encaja justo después.
+  if ($ultimaFecha -and $fecha -lt $ultimaFecha.AddDays(-20) -and $fecha.Day -le 12) {
+    try { $inv = New-Object DateTime ($fecha.Year, $fecha.Day, $fecha.Month, $fecha.Hour, $fecha.Minute, 0) } catch { $inv = $null }
+    if ($inv -and $inv -ge $ultimaFecha.AddDays(-1) -and $inv -le $ultimaFecha.AddDays(20) -and $inv -le (Get-Date)) {
+      [void]$avisos.Add("Fila $($t.n) (ID $($t.c[$col['ID']])): fecha $($fecha.ToString('yyyy-MM-dd')) con día y mes invertidos, se usó $($inv.ToString('yyyy-MM-dd')).")
+      $fecha = $inv
+    }
+  }
+  if ($fecha -gt (Get-Date).AddDays(1)) { [void]$avisos.Add("Fila $($t.n): fecha futura $($fecha.ToString('yyyy-MM-dd')), revisar.") }
+  $ultimaFecha = $fecha
   $min = 0.0; [void][double]::TryParse([string]$t.c[$col['Tiempo de parada en minutos']], [Globalization.NumberStyles]::Float, [Globalization.CultureInfo]::InvariantCulture, [ref]$min)
   $horas = 0.0; [void][double]::TryParse([string]$t.c[$col['Hora']], [Globalization.NumberStyles]::Float, [Globalization.CultureInfo]::InvariantCulture, [ref]$horas)
   [void]$eventos.Add([ordered]@{
@@ -130,3 +154,4 @@ $payload = [ordered]@{
 $json = $payload | ConvertTo-Json -Depth 4 -Compress
 [IO.File]::WriteAllText((Join-Path (Resolve-Path (Split-Path $Salida)) (Split-Path $Salida -Leaf)), $json, (New-Object Text.UTF8Encoding($false)))
 "Eventos: $($eventos.Count) -> $Salida"
+if ($avisos.Count) { "AVISOS ($($avisos.Count)):"; $avisos | ForEach-Object { "  - $_" } } else { 'Sin avisos.' }

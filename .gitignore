@@ -1,3 +1,5 @@
 node_modules/
 .claude/
 *.xlsx
+scripts/actualizar-pnp.log
+scripts/.pnp-ultima-huella.txt
