@@ -96,6 +96,11 @@
   z-index: 1;
 }
 
+.registro-wrap th[data-orden] {
+  cursor: pointer;
+  user-select: none;
+}
+
 .registro-wrap tfoot td {
   position: sticky;
   bottom: 0;

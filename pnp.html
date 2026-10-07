@@ -29,12 +29,12 @@
 <main>
   <section class="filters">
     <div class="field"><label for="fAnio">Año</label><select id="fAnio"></select></div>
-    <div class="field"><label for="fMes">Mes</label><select id="fMes"></select></div>
-    <div class="field"><label for="fSemana">N° Semana</label><select id="fSemana"></select></div>
-    <div class="field"><label for="fLinea">Línea Producción</label><select id="fLinea"></select></div>
-    <div class="field"><label for="fTipo">Tipo de PNP</label><select id="fTipo"></select></div>
-    <div class="field"><label for="fMaquina">Máquina</label><select id="fMaquina"></select></div>
-    <div class="field"><label for="fComponente">Componente</label><select id="fComponente"></select></div>
+    <div class="field"><label>Mes</label><div class="multi-select" id="mMes"></div></div>
+    <div class="field"><label>N° Semana</label><div class="multi-select" id="mSemana"></div></div>
+    <div class="field"><label>Línea Producción</label><div class="multi-select" id="mLinea"></div></div>
+    <div class="field"><label>Tipo de PNP</label><div class="multi-select" id="mTipo"></div></div>
+    <div class="field"><label>Máquina</label><div class="multi-select" id="mMaquina"></div></div>
+    <div class="field"><label>Componente</label><div class="multi-select" id="mComponente"></div></div>
     <div class="field field-btn">
       <label class="spacer">&nbsp;</label>
       <button id="fLimpiar" type="button">Limpiar filtros</button>
@@ -57,7 +57,7 @@
         </select>
       </div>
       <div class="chart-scroll"><div class="chart-box" id="boxComparativo"><canvas id="chComparativo"></canvas></div></div>
-      <p class="meta">Haz clic en una barra para filtrar el resto de la página por ese mes o semana.</p>
+      <p class="meta" id="compNota"></p>
     </section>
 
     <section class="dash-panel">
@@ -78,16 +78,17 @@
         <div class="chart-box"><canvas id="chLinea"></canvas></div>
       </section>
       <section class="dash-panel">
-        <h2>Tipo de avería (%)</h2>
+        <h2 id="tituloTipo">Tipo de avería (%)</h2>
         <div class="chart-scroll"><div class="chart-box" id="boxTipo"><canvas id="chTipo"></canvas></div></div>
       </section>
     </div>
 
     <section class="dash-panel">
       <h2>Registro de averías por equipo y componente</h2>
+      <p class="meta">Haz clic en el encabezado de una columna para ordenar (otro clic invierte el orden).</p>
       <div class="table-wrap registro-wrap">
         <table id="tablaRegistro">
-          <thead><tr><th>Máquina</th><th>Componente</th><th class="col-num">TFS (h)</th><th class="col-num">Averías</th><th>Mecanismo de falla</th></tr></thead>
+          <thead><tr><th data-orden="maquina" data-etiqueta="Máquina">Máquina</th><th data-orden="componente" data-etiqueta="Componente">Componente</th><th class="col-num" data-orden="horas" data-etiqueta="TFS (h)">TFS (h)</th><th class="col-num" data-orden="n" data-etiqueta="Averías">Averías</th><th data-orden="mecanismo" data-etiqueta="Mecanismo de falla">Mecanismo de falla</th></tr></thead>
           <tbody></tbody>
           <tfoot></tfoot>
         </table>

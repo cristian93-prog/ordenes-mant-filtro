@@ -126,7 +126,7 @@ foreach ($t in $table) {
     turno = Limpiar ([string]$t.c[$col['Turno']])
     linea = Limpiar ([string]$t.c[$col['Línea']])
     maquina = Limpiar ([string]$t.c[$col['Máquina']])
-    componente = Limpiar ([string]$t.c[$col['Componente']])
+    componente = (Limpiar ([string]$t.c[$col['Componente']])).ToLower()
     tipo = Limpiar ([string]$t.c[$col['Tipo de PNP']])
     minutos = [Math]::Round($min, 2)
     horas = [Math]::Round($horas, 4)

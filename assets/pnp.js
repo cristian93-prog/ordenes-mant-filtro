@@ -19,10 +19,56 @@ const fmtH = (v) => (v >= 10 ? num0.format(v) : num1.format(v));
 const state = {
   eventos: [],
   charts: {},
-  f: { anio: '', mes: '', semana: '', linea: '', tipo: 'Avería', maquina: '', componente: '' },
+  f: { anio: '' },
+  m: {},
   sel: { maquina: '', periodo: null },
   vista: 'mes',
+  orden: { col: 'horas', dir: 'desc' },
 };
+
+const multis = [];
+
+function crearMulti(id, textoTodos, alCambiar) {
+  const raiz = $(id);
+  raiz.innerHTML = '<button type="button" class="multi-select-btn"></button><div class="multi-select-panel" hidden><div class="multi-select-actions"><button type="button" data-limpiar>Limpiar</button></div><div data-opciones></div></div>';
+  const btn = raiz.querySelector('.multi-select-btn');
+  const panel = raiz.querySelector('.multi-select-panel');
+  const cont = raiz.querySelector('[data-opciones]');
+  const m = { raiz, sel: new Set(), opciones: [] };
+  const etiqueta = () => {
+    const n = m.sel.size;
+    const unico = n === 1 ? m.opciones.find((o) => o.valor === [...m.sel][0]) : null;
+    btn.textContent = n === 0 ? textoTodos : unico ? unico.texto : `${n} seleccionados`;
+  };
+  m.pintar = () => {
+    cont.innerHTML = m.opciones.map((o) => `<label class="multi-select-option"><input type="checkbox" value="${escapeHtml(o.valor)}"${m.sel.has(o.valor) ? ' checked' : ''}><span>${escapeHtml(o.texto)}</span></label>`).join('');
+    etiqueta();
+  };
+  m.poner = (opciones) => {
+    m.opciones = opciones;
+    m.sel = new Set([...m.sel].filter((v) => opciones.some((o) => o.valor === v)));
+    m.pintar();
+  };
+  m.fijar = (valores) => { m.sel = new Set(valores); m.pintar(); };
+  btn.addEventListener('click', () => {
+    multis.forEach((x) => { if (x !== m) x.raiz.querySelector('.multi-select-panel').hidden = true; });
+    panel.hidden = !panel.hidden;
+  });
+  raiz.querySelector('[data-limpiar]').addEventListener('click', () => { m.sel.clear(); m.pintar(); alCambiar(); });
+  cont.addEventListener('change', (e) => {
+    if (e.target.checked) m.sel.add(e.target.value); else m.sel.delete(e.target.value);
+    etiqueta();
+    alCambiar();
+  });
+  multis.push(m);
+  return m;
+}
+
+document.addEventListener('click', (e) => {
+  multis.forEach((m) => { if (!m.raiz.contains(e.target)) m.raiz.querySelector('.multi-select-panel').hidden = true; });
+});
+
+const dentro = (filtro, valor) => filtro.sel.size === 0 || filtro.sel.has(String(valor));
 
 function conAlpha(hex, alpha) {
   const n = parseInt(hex.slice(1), 16);
@@ -50,32 +96,27 @@ function suma(lista, campo) {
 }
 
 function filtrar({ anios, tipos, ignorarMaquina = false, ignorarPeriodo = false }) {
-  const f = state.f;
+  const m = state.m;
   const s = state.sel;
   return state.eventos.filter((e) =>
     anios.includes(e.y)
     && (!tipos || tipos.includes(e.tipo))
     && (ignorarMaquina || !s.maquina || e.maquina === s.maquina)
     && (ignorarPeriodo || !s.periodo || (s.periodo.modo === 'mes' ? e.m === s.periodo.valor : e.w === s.periodo.valor))
-    && (!f.mes || e.m === Number(f.mes))
-    && (!f.semana || e.w === Number(f.semana))
-    && (!f.linea || e.linea === f.linea)
-    && (!f.maquina || e.maquina === f.maquina)
-    && (!f.componente || e.componente === f.componente));
+    && dentro(m.mes, e.m)
+    && dentro(m.semana, e.w)
+    && dentro(m.linea, e.linea)
+    && dentro(m.maquina, e.maquina)
+    && dentro(m.componente, e.componente));
 }
 
-const tiposElegidos = () => (state.f.tipo ? [state.f.tipo] : null);
+const tiposElegidos = () => (state.m.tipo.sel.size ? [...state.m.tipo.sel] : null);
 
 function unicos(lista) {
   return [...new Set(lista.filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es'));
 }
 
-function llenarSelect(select, valores, textoTodos, valorActual) {
-  const opts = [`<option value="">${textoTodos}</option>`]
-    .concat(valores.map((v) => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`));
-  select.innerHTML = opts.join('');
-  select.value = valores.includes(valorActual) ? valorActual : '';
-}
+const comoOpciones = (valores) => valores.map((v) => ({ valor: v, texto: v }));
 
 function construirFiltros() {
   const anios = [...new Set(state.eventos.map((e) => e.y))].sort((a, b) => b - a);
@@ -83,29 +124,29 @@ function construirFiltros() {
   state.f.anio = String(anios[0]);
   $('fAnio').value = state.f.anio;
 
-  $('fMes').innerHTML = '<option value="">Todos</option>'
-    + MESES.map((m, i) => `<option value="${i + 1}">${m}</option>`).join('');
-
-  llenarSelect($('fLinea'), unicos(state.eventos.map((e) => e.linea)), 'Todas', '');
-  llenarSelect($('fTipo'), unicos(state.eventos.map((e) => e.tipo)), 'Todos los tipos', state.f.tipo);
-  $('fTipo').value = state.f.tipo;
-  llenarSelect($('fMaquina'), unicos(state.eventos.map((e) => e.maquina)), 'Todas', '');
+  state.m.mes = crearMulti('mMes', 'Todos', renderTodo);
+  state.m.mes.poner(MESES.map((nombre, i) => ({ valor: String(i + 1), texto: nombre })));
+  state.m.semana = crearMulti('mSemana', 'Todas', renderTodo);
+  state.m.linea = crearMulti('mLinea', 'Todas', renderTodo);
+  state.m.linea.poner(comoOpciones(unicos(state.eventos.map((e) => e.linea))));
+  state.m.tipo = crearMulti('mTipo', 'Todos los tipos', renderTodo);
+  state.m.tipo.poner(comoOpciones(unicos(state.eventos.map((e) => e.tipo))));
+  state.m.tipo.fijar(['Avería']);
+  state.m.maquina = crearMulti('mMaquina', 'Todas', () => { actualizarComponentes(); renderTodo(); });
+  state.m.maquina.poner(comoOpciones(unicos(state.eventos.map((e) => e.maquina))));
+  state.m.componente = crearMulti('mComponente', 'Todos', renderTodo);
   actualizarSemanas();
   actualizarComponentes();
 }
 
 function actualizarSemanas() {
   const semanas = [...new Set(state.eventos.filter((e) => e.y === Number(state.f.anio)).map((e) => e.w))].sort((a, b) => a - b);
-  const sel = $('fSemana');
-  sel.innerHTML = '<option value="">Todas</option>' + semanas.map((w) => `<option value="${w}">${w}</option>`).join('');
-  sel.value = semanas.includes(Number(state.f.semana)) ? state.f.semana : '';
-  state.f.semana = sel.value;
+  state.m.semana.poner(semanas.map((w) => ({ valor: String(w), texto: String(w) })));
 }
 
 function actualizarComponentes() {
-  const base = state.f.maquina ? state.eventos.filter((e) => e.maquina === state.f.maquina) : state.eventos;
-  llenarSelect($('fComponente'), unicos(base.map((e) => e.componente)), 'Todos', state.f.componente);
-  state.f.componente = $('fComponente').value;
+  const base = state.m.maquina.sel.size ? state.eventos.filter((e) => state.m.maquina.sel.has(e.maquina)) : state.eventos;
+  state.m.componente.poner(comoOpciones(unicos(base.map((e) => e.componente))));
 }
 
 const etiquetasValores = {
@@ -187,7 +228,12 @@ function renderComparativo() {
   const anio = Number(state.f.anio);
   const porSemana = state.vista === 'semana';
   const meta = porSemana ? META_SEMANAL : META_MENSUAL;
-  const ev = filtrar({ anios: [anio, anio - 1], tipos: tiposElegidos(), ignorarMaquina: true, ignorarPeriodo: true });
+  const ev = filtrar({ anios: [anio, anio - 1], tipos: tiposElegidos(), ignorarPeriodo: true });
+  // La meta (22 h / 5,5 h) es de toda la planta: solo se compara contra ella cuando no hay recorte por línea, máquina o componente.
+  const alcanceTotal = !state.sel.maquina && !state.m.maquina.sel.size && !state.m.componente.sel.size && !state.m.linea.sel.size;
+  $('compNota').textContent = alcanceTotal
+    ? 'Haz clic en una barra para filtrar el resto de la página por ese mes o semana; vuelve a hacer clic para quitarla.'
+    : 'Vista recortada por máquina, componente o línea: se muestra sin la meta (la meta de 22 h / 5,5 h es de toda la planta). Haz clic en una barra para filtrar por ese mes o semana.';
   const clave = (e) => (porSemana ? e.w : e.m);
   const horasPrev = {};
   const horasAct = {};
@@ -203,7 +249,7 @@ function renderComparativo() {
   const hayPeriodo = !!state.sel.periodo && state.sel.periodo.modo === state.vista;
   const seleccionada = (k) => hayPeriodo && state.sel.periodo.valor === k;
   const colorAct = (k) => {
-    const base = (horasAct[k] || 0) <= meta ? COLOR_DENTRO_META : COLOR_SOBRE_META;
+    const base = !alcanceTotal ? '#1f3a93' : (horasAct[k] || 0) <= meta ? COLOR_DENTRO_META : COLOR_SOBRE_META;
     return hayPeriodo && !seleccionada(k) ? conAlpha(base, 0.3) : base;
   };
 
@@ -217,7 +263,7 @@ function renderComparativo() {
         { label: `TFS ${anio - 1}`, data: claves.map((k) => (horasPrev[k] ? redondeo(horasPrev[k]) : 0)), backgroundColor: '#5aa9e6', order: 3 },
         { label: `TFS ${anio}`, data: claves.map((k) => (k <= ultimoConDatos ? redondeo(horasAct[k] || 0) : null)), backgroundColor: claves.map(colorAct), order: 3 },
         { type: 'line', label: `Averías ${anio}`, data: claves.map((k) => (k <= ultimoConDatos ? (cuenta[k] || 0) : null)), borderColor: '#f28e2b', backgroundColor: '#f28e2b', tension: 0.3, pointRadius: porSemana ? 2 : 4, order: 1 },
-        { type: 'line', label: porSemana ? `Meta semanal (${num1.format(META_SEMANAL)} h)` : `Meta mensual (${META_MENSUAL} h)`, data: claves.map(() => meta), borderColor: '#6b7280', borderDash: [6, 4], borderWidth: 2, pointRadius: 0, order: 2 },
+        { type: 'line', label: porSemana ? `Meta semanal (${num1.format(META_SEMANAL)} h)` : `Meta mensual (${META_MENSUAL} h)`, data: claves.map(() => meta), borderColor: '#6b7280', borderDash: [6, 4], borderWidth: 2, pointRadius: 0, order: 2, hidden: !alcanceTotal },
       ],
     },
     options: {
@@ -239,14 +285,14 @@ function renderComparativo() {
           labels: {
             generateLabels(chart) {
               const labels = Chart.defaults.plugins.legend.labels.generateLabels(chart);
-              if (labels[1]) { labels[1].fillStyle = COLOR_DENTRO_META; labels[1].strokeStyle = COLOR_DENTRO_META; labels[1].text = `TFS ${anio} (verde: dentro de meta, rojo: sobre meta)`; }
-              return labels;
+              if (labels[1] && alcanceTotal) { labels[1].fillStyle = COLOR_DENTRO_META; labels[1].strokeStyle = COLOR_DENTRO_META; labels[1].text = `TFS ${anio} (verde: dentro de meta, rojo: sobre meta)`; }
+              return alcanceTotal ? labels : labels.filter((_l, i) => i !== 3);
             },
           },
         },
         tooltip: {
           callbacks: {
-            afterLabel: (c) => (c.datasetIndex === 1 && c.raw !== null ? (c.raw <= meta ? 'Dentro de la meta' : `Sobre la meta (+${num1.format(c.raw - meta)} h)`) : ''),
+            afterLabel: (c) => (alcanceTotal && c.datasetIndex === 1 && c.raw !== null ? (c.raw <= meta ? 'Dentro de la meta' : `Sobre la meta (+${num1.format(c.raw - meta)} h)`) : ''),
           },
         },
         valorEtiquetas: {
@@ -373,20 +419,23 @@ function renderLinea() {
 
 function renderTipo() {
   const ev = filtrar({ anios: [Number(state.f.anio)], tipos: tiposElegidos() });
-  const semanas = [...new Set(ev.map((e) => e.w))].sort((a, b) => a - b);
+  const porSemana = state.vista === 'semana';
+  const clave = (e) => (porSemana ? e.w : e.m);
+  $('tituloTipo').textContent = porSemana ? 'Tipo de avería (%) por semana' : 'Tipo de avería (%) por mes';
+  const semanas = [...new Set(ev.map(clave))].sort((a, b) => a - b);
   const conteo = {};
   semanas.forEach((w) => { conteo[w] = {}; });
-  ev.forEach((e) => { conteo[e.w][e.mecanismo] = (conteo[e.w][e.mecanismo] || 0) + 1; });
+  ev.forEach((e) => { conteo[clave(e)][e.mecanismo] = (conteo[clave(e)][e.mecanismo] || 0) + 1; });
   const usados = MECANISMOS.filter((m) => semanas.some((w) => conteo[w][m]));
   const pctDe = (w, m) => {
     const tot = Object.values(conteo[w]).reduce((s, n) => s + n, 0);
     return tot ? ((conteo[w][m] || 0) / tot) * 100 : 0;
   };
-  $('boxTipo').style.minWidth = semanas.length > 10 ? `${semanas.length * 34}px` : '';
+  $('boxTipo').style.minWidth = porSemana && semanas.length > 10 ? `${semanas.length * 34}px` : '';
   dibujar('chTipo', {
     type: 'bar',
     data: {
-      labels: semanas.map((w) => `sem${w}`),
+      labels: semanas.map((w) => (porSemana ? `sem${w}` : MESES[w - 1].toLowerCase())),
       datasets: usados.map((m) => ({
         label: m || 'Sin clasificar',
         data: semanas.map((w) => Math.round(pctDe(w, m) * 10) / 10),
@@ -415,18 +464,28 @@ function renderRegistro() {
     if (e.mecanismo) g.mec[e.mecanismo] = (g.mec[e.mecanismo] || 0) + 1;
     mapa.set(clave, g);
   });
-  const filas = [...mapa.values()].sort((a, b) => b.horas - a.horas);
   const mecPrincipal = (g) => Object.entries(g.mec).sort((a, b) => b[1] - a[1])[0]?.[0] || '';
+  const filas = [...mapa.values()].map((g) => ({ ...g, mecanismo: mecPrincipal(g) }));
+  const { col, dir } = state.orden;
+  const signo = dir === 'asc' ? 1 : -1;
+  const textual = col === 'maquina' || col === 'componente' || col === 'mecanismo';
+  filas.sort((a, b) => {
+    const c = textual ? String(a[col]).localeCompare(String(b[col]), 'es') : a[col] - b[col];
+    return c * signo || b.horas - a.horas || b.n - a.n;
+  });
+  document.querySelectorAll('#tablaRegistro th[data-orden]').forEach((th) => {
+    th.textContent = th.dataset.etiqueta + (th.dataset.orden === col ? (dir === 'asc' ? ' ▲' : ' ▼') : '');
+  });
   document.querySelector('#tablaRegistro tbody').innerHTML = filas.map((g) => `
     <tr>
       <td>${escapeHtml(g.maquina)}</td>
       <td>${escapeHtml(g.componente)}</td>
-      <td class="col-num">${num1.format(g.horas)}</td>
+      <td class="col-num" title="${num1.format(g.horas)} h">${num0.format(g.horas)}</td>
       <td class="col-num">${g.n}</td>
-      <td>${escapeHtml(mecPrincipal(g))}</td>
+      <td>${escapeHtml(g.mecanismo)}</td>
     </tr>`).join('');
   document.querySelector('#tablaRegistro tfoot').innerHTML = `
-    <tr><td>Total</td><td></td><td class="col-num">${num1.format(suma(filas, 'horas'))}</td><td class="col-num">${suma(filas, 'n')}</td><td></td></tr>`;
+    <tr><td>Total</td><td></td><td class="col-num" title="${num1.format(suma(filas, 'horas'))} h">${num0.format(suma(filas, 'horas'))}</td><td class="col-num">${suma(filas, 'n')}</td><td></td></tr>`;
 }
 
 function renderSeleccion() {
@@ -468,21 +527,25 @@ function conectarFiltros() {
     else state.sel.periodo = null;
     renderTodo();
   });
-  const mapa = { fAnio: 'anio', fMes: 'mes', fSemana: 'semana', fLinea: 'linea', fTipo: 'tipo', fMaquina: 'maquina', fComponente: 'componente' };
-  Object.entries(mapa).forEach(([id, clave]) => {
-    $(id).addEventListener('change', () => {
-      state.f[clave] = $(id).value;
-      if (clave === 'anio') { actualizarSemanas(); state.sel = { maquina: '', periodo: null }; }
-      if (clave === 'maquina') actualizarComponentes();
-      if (clave === 'maquina') actualizarComponentes();
-      renderTodo();
-    });
+  $('fAnio').addEventListener('change', () => {
+    state.f.anio = $('fAnio').value;
+    state.sel = { maquina: '', periodo: null };
+    actualizarSemanas();
+    renderTodo();
+  });
+  $('tablaRegistro').querySelector('thead').addEventListener('click', (e) => {
+    const th = e.target.closest('th[data-orden]');
+    if (!th) return;
+    const col = th.dataset.orden;
+    const textual = col === 'maquina' || col === 'componente' || col === 'mecanismo';
+    state.orden = state.orden.col === col
+      ? { col, dir: state.orden.dir === 'desc' ? 'asc' : 'desc' }
+      : { col, dir: textual ? 'asc' : 'desc' };
+    renderRegistro();
   });
   $('fLimpiar').addEventListener('click', () => {
-    const anio = state.f.anio;
-    state.f = { anio, mes: '', semana: '', linea: '', tipo: 'Avería', maquina: '', componente: '' };
-    ['fMes', 'fSemana', 'fLinea', 'fMaquina'].forEach((id) => { $(id).value = ''; });
-    $('fTipo').value = 'Avería';
+    ['mes', 'semana', 'linea', 'maquina', 'componente'].forEach((k) => state.m[k].fijar([]));
+    state.m.tipo.fijar(['Avería']);
     state.sel = { maquina: '', periodo: null };
     actualizarComponentes();
     renderTodo();
