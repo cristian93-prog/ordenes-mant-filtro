@@ -132,18 +132,21 @@
   position: absolute;
   top: 3px;
   right: 3px;
-  width: 4px;
-  height: 4px;
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
-  opacity: 0.7;
+  opacity: 0.9;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.85);
 }
 
 .type-dot.type-interna {
-  background: #2563eb;
+  background: #1e3a8a;
 }
 
 .type-dot.type-externa {
-  background: #8a6de0;
+  background: #6d1fa3;
+  border-radius: 1px;
+  transform: rotate(45deg);
 }
 
 .gantt-bar .num {
@@ -238,11 +241,14 @@
 .dot-en-curso { background: #fdf3c8; border: 1px solid #8a6d00; }
 .dot-reprogramado { background: #fbdada; border: 1px solid #a32626; }
 .dot-shared { background: transparent; border: 1px dashed var(--muted); }
-.dot-interna { background: #2563eb; border-radius: 50%; }
-.dot-externa { background: #8a6de0; border-radius: 50%; }
+.dot-interna { background: #1e3a8a; border-radius: 50%; }
+.dot-externa { background: #6d1fa3; border-radius: 1px; transform: rotate(45deg) scale(0.85); }
 
 @media (prefers-color-scheme: dark) {
   .bar-ejecutado { background: #1c3326; color: #7fd8a0; }
   .bar-en-curso { background: #3a3418; color: #e6c85c; }
   .bar-reprogramado { background: #3a2020; color: #e88a8a; }
+  .type-dot.type-interna, .dot-interna { background: #9db8ff; }
+  .type-dot.type-externa, .dot-externa { background: #d9b8ff; }
+  .type-dot { box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.6); }
 }
